@@ -1,0 +1,63 @@
+{
+  "project_info": {
+    "project_number": "1045038691220",
+    "firebase_url": "https://mychat-e3890.firebaseio.com",
+    "project_id": "mychat-e3890",
+    "storage_bucket": "mychat-e3890.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1045038691220:android:cd1a30da12054efa",
+        "android_client_info": {
+          "package_name": "project.kym.mychat"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1045038691220-qaf8d5j5q670rmeg1j5gpkvn9i77hnu9.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "project.kym.mychat",
+            "certificate_hash": "4bab515b000d017299779cafd563e404b0d1c92a"
+          }
+        },
+        {
+          "client_id": "1045038691220-o03ghutku4epuebg6nhmbss7rbhnek2d.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "project.kym.mychat",
+            "certificate_hash": "4dd782aa0eb9f6a7632b8899c28482590eebe262"
+          }
+        },
+        {
+          "client_id": "1045038691220-g8b0ocqejoigo7f3pa4soaq69bc79shk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD0bVrNzYSS_GAlpiAqZC2cm5rj_JPgqsE"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1045038691220-g8b0ocqejoigo7f3pa4soaq69bc79shk.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

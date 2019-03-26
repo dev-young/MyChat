@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">My Chat</string>
+    <string name="rc_color">splash_background</string>
+
+    <string name="default_notification_channel_id" translatable="false">fcm_default_channel</string>
+    <string name="send">전송</string>
+    <string name="no_chat_list">채팅 기록이 없습니다.</string>
+</resources>
