@@ -28,7 +28,7 @@ public class PeopleViewModel {
 
     public void onItemClicked(View v){
         RLog.e(userName.get());
-        view.startDoubleMessageActivity(uid.get());
+        view.startDoubleMessageActivity(uid.get(), userName.get());
     }
 
 

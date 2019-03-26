@@ -11,6 +11,8 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import project.kym.mychat.R;
 import project.kym.mychat.databinding.FragmentPeopleBinding;
@@ -46,10 +48,10 @@ public class PeopleFragment extends Fragment implements PeopleListViewContract{
     }
 
     @Override
-    public void startDoubleMessageActivity(String destinationUID) {
-        ArrayList<String> destinationUIDs = new ArrayList<>();
-        destinationUIDs.add(destinationUID);
-        MessageActivity.start(getActivity(), null, destinationUIDs, false);
+    public void startDoubleMessageActivity(String destinationUID, String title) {
+        HashMap<String, Long> roomUsers = new HashMap<>();
+        roomUsers.put(destinationUID, 0L);
+        MessageActivity.start(getActivity(), null, roomUsers, false, title);
     }
 
     @Override

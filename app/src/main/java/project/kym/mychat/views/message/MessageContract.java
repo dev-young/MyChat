@@ -27,6 +27,8 @@ public interface MessageContract {
 
     interface View{
 
+        void setTitlebar(String title);
+
         void scrollToPosition(int position);
 
         void setSendButtonEnabled(boolean enabled);

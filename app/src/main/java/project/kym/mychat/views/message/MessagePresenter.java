@@ -4,6 +4,7 @@ import android.content.Intent;
 import androidx.annotation.NonNull;
 
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.CollectionReference;
@@ -50,9 +51,6 @@ public class MessagePresenter implements MessageContract{
         this.view = (View) view;
         lastAddedDate = simpleDateFormat.format(new Date(10000000));
         firestore = FirebaseFirestore.getInstance();
-
-        if(MyAccount.getInstance().getAccountProvider() == 0)
-            MyAccount.getInstance().loadAccountProvider(((Fragment) view).getContext());
     }
 
     public void setAdapter(MessageRecyclerViewAdapter adapter){
@@ -88,8 +86,11 @@ public class MessagePresenter implements MessageContract{
 //            getUsersAndLoadMessagesFromRealTimeDB(chatRoomUid);
                         getUsersAndLoadMessages(chatRoomUid);
                     } else{
+                        RLog.i("그룹챗을 새로 만들어 들어온 경우");
                         // 그룹챗을 새로 만들어 들어온 경우, send 버튼을 클릭할 때 방을 생성하고 어뎁터를 만들고 데이터를 불러온다.
                     }
+                } else {
+                    RLog.e("채팅방 초기화중 에러 발생");
                 }
             }
         });
@@ -363,9 +364,15 @@ public class MessagePresenter implements MessageContract{
                                     sendMessage(chatRoomUid, comment);
 
                                 view.setSendButtonEnabled(true);
+                                view.showProgress(false);
                             }
                         });
                     }
+                }
+            }).addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception e) {
+                    view.showProgress(false);
                 }
             });
         }
@@ -397,8 +404,6 @@ public class MessagePresenter implements MessageContract{
                 }
             }
         });
-
-
 
     }
 

@@ -1,6 +1,8 @@
 package project.kym.mychat.views;
 
 import android.os.Bundle;
+import android.view.MenuItem;
+
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -29,5 +31,15 @@ public class BaseActivity extends AppCompatActivity {
     protected void onDestroy() {
         RLog.i();
         super.onDestroy();
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()){
+            case android.R.id.home:
+                finish();
+        }
+
+        return super.onOptionsItemSelected(item);
     }
 }
