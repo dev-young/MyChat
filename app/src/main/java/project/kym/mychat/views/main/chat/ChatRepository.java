@@ -97,7 +97,7 @@ public class ChatRepository {
                 List<ChatModel> chatModels = new ArrayList<>();
                 for (DataSnapshot item :dataSnapshot.getChildren()){
                     ChatModel chatModel = item.getValue(ChatModel.class);
-                    chatModel.uid = item.getKey();
+                    chatModel.setUid(item.getKey());
                     chatModels.add(chatModel);
                 }
                 Collections.sort(chatModels, new ChatModelSort());
@@ -126,9 +126,9 @@ public class ChatRepository {
 
         @Override
         public int compare(ChatModel o1, ChatModel o2) {
-            if((long)((Date)o1.timestamp).getTime()> (long)((Date)o2.timestamp).getTime())
+            if((long)((Date)o1.getTimestamp()).getTime()> (long)((Date)o2.getTimestamp()).getTime())
                 return -1;
-            else if((long)((Date)o1.timestamp).getTime() < (long)((Date)o2.timestamp).getTime())
+            else if((long)((Date)o1.getTimestamp()).getTime() < (long)((Date)o2.getTimestamp()).getTime())
                 return 1;
             else
                 return 0;

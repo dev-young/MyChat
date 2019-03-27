@@ -66,9 +66,9 @@ public class MessageRecyclerViewAdapter extends RecyclerView.Adapter<MessageRecy
     public void onBindViewHolder(MessageViewHodler viewHolder, int position) {
         int itemType = getItemViewType(position);
         ChatModel.Comment comment = comments.get(position);
-        String uid = comment.uid;
+        String uid = comment.getUid();
         UserModel userModel = users.get(uid);
-        int count = peopleCount - comment.readUsers.size();
+        int count = peopleCount - comment.getReadUsers().size();
 
         if(itemType == TYPE_DATE){
             ((DateMessageViewHolder)viewHolder).setData(comment);
@@ -82,16 +82,16 @@ public class MessageRecyclerViewAdapter extends RecyclerView.Adapter<MessageRecy
 
         if(position > 0){
             // 첫번째 아이템이 아닌경우
-            beforeUid = comments.get(position-1).uid;
-            beforeTime = getTime(comments.get(position-1).timestamp);
+            beforeUid = comments.get(position-1).getUid();
+            beforeTime = getTime(comments.get(position-1).getTimestamp());
         }
         if(position+1 < comments.size()){
             // 다음 아이템이 있는 경우
-            nextUid = comments.get(position+1).uid;
-            nextTime = getTime(comments.get(position+1).timestamp);
+            nextUid = comments.get(position+1).getUid();
+            nextTime = getTime(comments.get(position+1).getTimestamp());
         }
 
-        String time = getTime(comment.timestamp);
+        String time = getTime(comment.getTimestamp());
 //        String time = "";
 
         // 모든 아이템에 프로필 정보를 표시하지 않고 카톡처럼 연속된 시간의 첫번째 아이템에만 프로필정보를 표시하기 위한 조건문
@@ -101,7 +101,7 @@ public class MessageRecyclerViewAdapter extends RecyclerView.Adapter<MessageRecy
         }
 
         // 모든 아이템에 시간을 표시하지 않고 카톡처럼 연속된 시간의 마지막 아이템에만 시간을 표시하기 위한 조건문
-        if(time.equals(nextTime) && comment.uid.equals(nextUid)){
+        if(time.equals(nextTime) && comment.getUid().equals(nextUid)){
             // 다음 아이템과 표시 시간과 작성자가 같은 경우 시간을 표시하지 않는다.
             time = "";
         }
@@ -109,11 +109,11 @@ public class MessageRecyclerViewAdapter extends RecyclerView.Adapter<MessageRecy
 
         switch (getItemViewType(position)){
             case TYPE_MESSAGE_LEFT:
-                ((LeftTextMessageViewHolder)viewHolder).setData(userModel, comment.message, time, count);
+                ((LeftTextMessageViewHolder)viewHolder).setData(userModel, comment.getMessage(), time, count);
                 break;
 
             case TYPE_MESSAGE_RIGHT:
-                ((RightTextMessageViewHolder)viewHolder).setData(comment.message, time, count);
+                ((RightTextMessageViewHolder)viewHolder).setData(comment.getMessage(), time, count);
                 break;
 
             default:
@@ -124,7 +124,7 @@ public class MessageRecyclerViewAdapter extends RecyclerView.Adapter<MessageRecy
     public int getItemViewType(int position) {
 //        RLog.d("position: " + position);
         ChatModel.Comment comment = comments.get(position);
-        String uid = comment.uid;
+        String uid = comment.getUid();
         UserModel userModel = users.get(uid);
 //        RLog.e(users.toString());
 //        RLog.e(uid);
@@ -195,7 +195,7 @@ public class MessageRecyclerViewAdapter extends RecyclerView.Adapter<MessageRecy
 
     @Override
     public void addItem(ChatModel.Comment comment) {
-        RLog.e("날짜: " + comment.timestamp.toString());
+        RLog.e("날짜: " + comment.getTimestamp().toString());
         comments.add(comment);
     }
 
@@ -208,8 +208,8 @@ public class MessageRecyclerViewAdapter extends RecyclerView.Adapter<MessageRecy
     @Override /** Comment의 ReadUsers 수정 */
     public int updateReadUsers(String key, ChatModel.Comment c) {
         int targetPosition = commentMap.get(key);
-        comments.get(targetPosition).readUsers = c.readUsers;
-        comments.get(targetPosition).timestamp = c.timestamp;
+        comments.get(targetPosition).setReadUsers(c.getReadUsers());
+        comments.get(targetPosition).setTimestamp(c.getTimestamp());
 //        notifyItemChanged(targetPosition);
         notifyDataSetChanged();
 //        if(targetPosition > 0)
@@ -310,7 +310,7 @@ public class MessageRecyclerViewAdapter extends RecyclerView.Adapter<MessageRecy
         }
 
         public void setData(ChatModel.Comment comment) {
-            String time = simpleDateFormat.format(comment.timestamp);
+            String time = simpleDateFormat.format(comment.getTimestamp());
             textView_date.setText(time);
         }
     }

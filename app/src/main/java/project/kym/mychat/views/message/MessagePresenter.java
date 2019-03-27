@@ -136,11 +136,11 @@ public class MessagePresenter implements MessageContract{
         MessageRepository.getInstance().startListen(chatRoomUid, new MessageRepository.OnEventListener() {
             @Override
             public void onAdded(String key, ChatModel.Comment comment_origin, CollectionReference reference) {
-                currentAddedDate = comment_origin.timestamp;
+                currentAddedDate = comment_origin.getTimestamp();
                 String addedDate = simpleDateFormat.format(currentAddedDate);
                 if(!lastAddedDate.equals(addedDate)){
                     ChatModel.Comment comment = new ChatModel.Comment();
-                    comment.timestamp = comment_origin.timestamp;
+                    comment.setTimestamp(comment_origin.getTimestamp());
                     lastAddedDate = addedDate;
                     adapterModel.addItem(comment);
                 }
@@ -149,9 +149,9 @@ public class MessagePresenter implements MessageContract{
 
                 // 추가된 comment에  내 uid가 없으면 readUsers에 put한다.
                 if (!isContainMyUid(comment_origin)) {
-                    RLog.e(comment_origin.uid + " 는 내uid를 가지고있지 않다.");
+                    RLog.e(comment_origin.getUid() + " 는 내uid를 가지고있지 않다.");
                     ChatModel.Comment comment_motify = comment_origin;
-                    comment_motify.readUsers.put(myUid, true);
+                    comment_motify.getReadUsers().put(myUid, true);
                     readUsersMap.put(key, comment_motify);
                 } else {
                     // 읽은 유저 목록에 내 uid 가 있으면 서버에 요청 없이 그냥 수정한다.
@@ -196,7 +196,7 @@ public class MessagePresenter implements MessageContract{
 
             @Override
             public void onChanged(String key, ChatModel.Comment comment) {
-                if(myUid.equals(comment.uid) && comment.readUsers.size() == 1)
+                if(myUid.equals(comment.getUid()) && comment.getReadUsers().size() == 1)
                     return;
 
                 adapterModel.updateReadUsers(key, comment);
@@ -217,13 +217,13 @@ public class MessagePresenter implements MessageContract{
     }
 
     private boolean isContainMyUid(ChatModel.Comment comment) {
-        return comment.readUsers.containsKey(myUid);
+        return comment.getReadUsers().containsKey(myUid);
     }
 
     private boolean isLastMessage(ChatModel.Comment comment) {
 //        RLog.i("O : " + lastTimestamp);
 //        RLog.e("N : " + comment.timestamp.getTime());
-        boolean b = comment.timestamp.getTime() + 750 >= lastTimestamp;
+        boolean b = comment.getTimestamp().getTime() + 750 >= lastTimestamp;
         if(b)
             view.showProgress(false);
         return b;
@@ -261,7 +261,7 @@ public class MessagePresenter implements MessageContract{
                     chatTitle = MyAccount.getInstance().getUserModel().getUserName();
                 PushUtil.sendFCM_Message(tokens,
                         chatTitle,
-                        comment.message,
+                        comment.getMessage(),
                         users.get(myUid).getProfileImageUrl(),
                         isGroupMessage);
 
@@ -280,7 +280,7 @@ public class MessagePresenter implements MessageContract{
     @Override /** 첫번째로 표시되는 뷰의 날짜와 상단에 표시될 날짜를 동기화 시킨다. */
     public void listenFirstVisiblePosition(int firstCompletelyVisibleItemPosition) {
         if(firstCompletelyVisibleItemPosition > -1){
-            Date date = adapterModel.getItem(firstCompletelyVisibleItemPosition).timestamp;
+            Date date = adapterModel.getItem(firstCompletelyVisibleItemPosition).getTimestamp();
             if(date != null){
                 String time = simpleDateFormat.format(date);
                 view.setDateTextView(time);
@@ -317,11 +317,11 @@ public class MessagePresenter implements MessageContract{
     /**********************************************************************************************/
     private ChatModel.Comment makeComment(String message){
         ChatModel.Comment comment = new ChatModel.Comment();
-        comment.uid = myUid;
-        comment.message = message;
+        comment.setUid(myUid);
+        comment.setMessage(message);
         Map<String,Object> readUsers = new HashMap<>();  //읽은 유저 목록
         readUsers.put(myUid, true);
-        comment.readUsers = readUsers;
+        comment.setReadUsers(readUsers);
         return comment;
     }
 
@@ -333,11 +333,11 @@ public class MessagePresenter implements MessageContract{
         RLog.i("chatRoomUid == null");
         view.setSendButtonEnabled(false);
         final ChatModel chatModel = new ChatModel();
-        chatModel.users.put(myUid, 0);
+        chatModel.getUsers().put(myUid, 0);
         for(String s : roomUsers.keySet())
-            chatModel.users.put(s, 0);
-        chatModel.isGroup = isGroupMessage;
-        for(String key : chatModel.users.keySet()){
+            chatModel.getUsers().put(s, 0);
+        chatModel.setGroup(isGroupMessage);
+        for(String key : chatModel.getUsers().keySet()){
             firestore.collection("users").document(key).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
                 @Override
                 public void onSuccess(DocumentSnapshot snapshot) {
@@ -345,15 +345,18 @@ public class MessagePresenter implements MessageContract{
                     users.put(snapshot.getId(), userModel);
                     if(title == null){
                         // 타이틀값이 없을 경우 유저 이름들로 타이틀 생성
-                        if(chatModel.title == null)
-                            chatModel.title = userModel.getUserName();
-                        else
-                            chatModel.title += ", " + userModel.getUserName();
+                        if(chatModel.getTitle() == null)
+                            chatModel.setTitle(userModel.getUserName());
+                        else{
+                            String title = chatModel.getTitle();
+                            title += ", " + userModel.getUserName();
+                            chatModel.setTitle(title);
+                        }
                     } else {
                         //타이틀이 있을경우
-                        chatModel.title = title;
+                        chatModel.setTitle(title);
                     }
-                    if(users.size() == chatModel.users.size()){
+                    if(users.size() == chatModel.getUsers().size()){
                         ChatUtil.makeChatRoom(chatModel, new ChatUtil.AddValueListener() {
                             @Override
                             public void onSuccess(String key) {
@@ -388,7 +391,7 @@ public class MessagePresenter implements MessageContract{
             public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
                 for (QueryDocumentSnapshot item : queryDocumentSnapshots) {
                     ChatModel chatModel = item.toObject(ChatModel.class);
-                    if (chatModel.users.containsKey(destinationUid) && !chatModel.isGroup) {
+                    if (chatModel.getUsers().containsKey(destinationUid) && !chatModel.isGroup()) {
                         chatRoomUid = item.getId();
                         PushUtil.currentRoomUid = chatRoomUid;
                         break;
@@ -415,8 +418,8 @@ public class MessagePresenter implements MessageContract{
             public void onSuccess(DocumentSnapshot documentSnapshot) {
                 ChatModel chatModel = documentSnapshot.toObject(ChatModel.class);
                 RLog.e(documentSnapshot.toString());
-                lastTimestamp = chatModel.timestamp.getTime();
-                RLog.i(chatModel.timestamp.toString() + "  UnixTime: " + lastTimestamp);
+                lastTimestamp = chatModel.getTimestamp().getTime();
+                RLog.i(chatModel.getTimestamp().toString() + "  UnixTime: " + lastTimestamp);
             }
         });
 

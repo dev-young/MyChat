@@ -42,7 +42,7 @@ public class ChatPresenter implements ChatContract, OnItemClickListner {
         ChatRepository.getInstance().startListen(myUid, new ChatRepository.OnEventListener() {
             @Override
             public void onAdded(String key, ChatModel chatModel) {
-                chatModel.roomUid = key;
+                chatModel.setRoomUid(key);
                 adapterModel.addItem(key, chatModel);
                 adapterView.notifyAdapter();
 
@@ -71,6 +71,6 @@ public class ChatPresenter implements ChatContract, OnItemClickListner {
     @Override
     public void onItemClick(int position) {
         ChatModel chatModel = adapterModel.getItem(position);
-        view.startMessageActivity(chatModel.roomUid, chatModel.title, chatModel.isGroup);
+        view.startMessageActivity(chatModel.getRoomUid(), chatModel.getTitle(), chatModel.isGroup());
     }
 }

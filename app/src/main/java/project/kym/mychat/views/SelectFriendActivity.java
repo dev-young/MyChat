@@ -41,7 +41,7 @@ public class SelectFriendActivity extends BaseActivity {
             @Override
             public void onClick(View view) {
                 ArrayList<String> destinationUIDs = new ArrayList<>();
-                destinationUIDs.addAll(chatModel.users.keySet());
+                destinationUIDs.addAll(chatModel.getUsers().keySet());
                 Intent intent = new Intent(view.getContext(), MessageActivity.class);
                 intent.putExtra("destinationUids", destinationUIDs);
                 MessageActivity.start(SelectFriendActivity.this, null, destinationUIDs, true);
@@ -98,12 +98,12 @@ public class SelectFriendActivity extends BaseActivity {
                 public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
                     //체크 된상태
                     if(b){
-                        chatModel.users.put(userModel.getUid(),0);
+                        chatModel.getUsers().put(userModel.getUid(),0);
                         //체크 취소 상태
                     }else{
-                        chatModel.users.remove(userModel.getUid());
+                        chatModel.getUsers().remove(userModel.getUid());
                     }
-                    if(chatModel.users.isEmpty())
+                    if(chatModel.getUsers().isEmpty())
                         button.setEnabled(false);
                     else
                         button.setEnabled(true);

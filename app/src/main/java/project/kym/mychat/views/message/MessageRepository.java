@@ -43,8 +43,8 @@ public class MessageRepository {
                     ChatModel.Comment comment_origin = change.getDocument().toObject(ChatModel.Comment.class);
                     switch (change.getType()) {
                         case ADDED:
-                            if(comment_origin.timestamp == null)
-                                comment_origin.timestamp = change.getDocument().getDate("timestamp", behavior);
+                            if(comment_origin.getTimestamp() == null)
+                                comment_origin.setTimestamp(change.getDocument().getDate("timestamp", behavior));
                             onEventListener.onAdded(key, comment_origin, roomRef);
                             RLog.i("데이터 추가! " + comment_origin.toString());
 

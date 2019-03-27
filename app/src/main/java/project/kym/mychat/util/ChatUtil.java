@@ -43,11 +43,11 @@ public class ChatUtil {
         final FirebaseFirestore firestore = FirebaseFirestore.getInstance();
         final DocumentReference reference = firestore.collection("chatrooms").document(chatRoomUid);
         final Map<String, Object> message = new HashMap<>();
-        message.put("uid", comment.uid);
-        message.put("type", comment.type);
-        message.put("message", comment.message);
-        message.put("fileName", comment.fileName);
-        message.put("fileUrl", comment.fileUrl);
+        message.put("uid", comment.getUid());
+        message.put("type", comment.getType());
+        message.put("message", comment.getMessage());
+        message.put("fileName", comment.getFileName());
+        message.put("fileUrl", comment.getFileUrl());
         message.put("timestamp", FieldValue.serverTimestamp());
         RLog.e("생성된 메시지: " +message.toString());
         reference.get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
@@ -56,12 +56,12 @@ public class ChatUtil {
                 WriteBatch batch = firestore.batch();
                 batch.set(reference, message, SetOptions.merge());
 
-                message.put("readUsers", comment.readUsers);
+                message.put("readUsers", comment.getReadUsers());
                 batch.set(reference.collection("comments").document(), message);
 
                 Map<String, Long> users = (Map<String, Long>) document.get("users");
                 for( String key : users.keySet() ){
-                    if (!comment.uid.equals(key)) users.put(key, users.get(key)+1);
+                    if (!comment.getUid().equals(key)) users.put(key, users.get(key)+1);
                 }
                 document.getReference().update("users", users);
 
@@ -84,34 +84,6 @@ public class ChatUtil {
 
 
 
-    }
-
-    @Deprecated
-    public static String makeChatRoomInRealTimeDB(ChatModel chatModel, final SetValueListener setValueListener){
-        DatabaseReference pushedRef = FirebaseDatabase.getInstance().getReference().child("chatrooms").push();
-        String chatRoomUid = pushedRef.getKey();
-        pushedRef.setValue(chatModel).addOnSuccessListener(new OnSuccessListener<Void>() {
-            @Override
-            public void onSuccess(Void aVoid) {
-                setValueListener.onSuccess();
-            }
-        });
-        return chatRoomUid;
-    }
-
-    @Deprecated
-    public static void sendMessageInRealTimeDB(String chatRoomUid, final ChatModel.Comment comment, final SendMessageListener sendMessageListener) {
-        RLog.i("chatRoomUid = " + chatRoomUid);
-        FirebaseDatabase.getInstance().getReference().child("chatrooms").child(chatRoomUid).child("comments").push().setValue(comment).addOnCompleteListener(new OnCompleteListener<Void>() {
-            @Override
-            public void onComplete(@NonNull Task<Void> task) {
-                sendMessageListener.onSuccess();
-            }
-        });
-    }
-
-    public interface SetValueListener{
-        void onSuccess();
     }
 
     public interface SendMessageListener{

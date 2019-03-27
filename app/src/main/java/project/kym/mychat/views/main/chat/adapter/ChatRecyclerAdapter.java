@@ -60,7 +60,7 @@ public class ChatRecyclerAdapter extends  RecyclerView.Adapter<ChatRecyclerAdapt
 
         String destinationUid = "";
         // 챗방에 있는 유저들의 리스트를  체크
-        for(String user: chatModel.users.keySet()){
+        for(String user: chatModel.getUsers().keySet()){
             if(!user.equals(myUid)){
                 destinationUid = user;
                 break;
@@ -68,7 +68,7 @@ public class ChatRecyclerAdapter extends  RecyclerView.Adapter<ChatRecyclerAdapt
         }
 
         // 방 이름
-        final boolean isGroup = chatModel.isGroup;
+        final boolean isGroup = chatModel.isGroup();
         FirebaseFirestore.getInstance().collection("users").document(destinationUid).get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
             @Override
             public void onComplete(@NonNull Task<DocumentSnapshot> task) {
@@ -77,7 +77,7 @@ public class ChatRecyclerAdapter extends  RecyclerView.Adapter<ChatRecyclerAdapt
                     if(isGroup){
                         // 그룹챗인 경우
                         holder.imageView.setImageResource(R.drawable.group_24dp);
-                        holder.textView_title.setText(chatModel.title);
+                        holder.textView_title.setText(chatModel.getTitle());
 //                        holder.textView_title.setText(userModel.userName + "외 " + (chatModel.users.size()-1) + "명");
                     } else {
                         // 1:1 채팅인 경우
@@ -93,14 +93,14 @@ public class ChatRecyclerAdapter extends  RecyclerView.Adapter<ChatRecyclerAdapt
 
 
         //메시지
-        holder.textView_last_message.setText(chatModel.message);
+        holder.textView_last_message.setText(chatModel.getMessage());
 
         //TimeStamp
-        if(chatModel.timestamp != null) // 가끔 서버 딜레이로 널이 들어갈 수 있음
-            setDate(holder.textView_timestamp, chatModel.timestamp);
+        if(chatModel.getTimestamp() != null) // 가끔 서버 딜레이로 널이 들어갈 수 있음
+            setDate(holder.textView_timestamp, chatModel.getTimestamp());
 
         // 내가 안읽은 메시지 갯수 확인
-        int cnt = chatModel.users.get(myUid);
+        int cnt = chatModel.getUsers().get(myUid);
         if(cnt == 0)
             holder.textView_new_msgcnt.setVisibility(View.GONE);
         else {
@@ -200,14 +200,14 @@ public class ChatRecyclerAdapter extends  RecyclerView.Adapter<ChatRecyclerAdapt
     @Override
     public void updateItem(String key, ChatModel chatModel) {
         int targetPosition = positionMap.get(key);
-        chatModels.get(targetPosition).isGroup = chatModel.isGroup;
-        chatModels.get(targetPosition).uid= chatModel.uid;
-        chatModels.get(targetPosition).message = chatModel.message;
-        chatModels.get(targetPosition).users = chatModel.users;
-        chatModels.get(targetPosition).type = chatModel.type;
-        chatModels.get(targetPosition).timestamp = chatModel.timestamp;
-        chatModels.get(targetPosition).fileName = chatModel.fileName;
-        chatModels.get(targetPosition).fileUrl = chatModel.fileUrl;
+        chatModels.get(targetPosition).setGroup(chatModel.isGroup());
+        chatModels.get(targetPosition).setUid(chatModel.getUid());
+        chatModels.get(targetPosition).setMessage(chatModel.getMessage());
+        chatModels.get(targetPosition).setUsers(chatModel.getUsers());
+        chatModels.get(targetPosition).setType(chatModel.getType());
+        chatModels.get(targetPosition).setTimestamp(chatModel.getTimestamp());
+        chatModels.get(targetPosition).setFileName(chatModel.getFileName());
+        chatModels.get(targetPosition).setFileUrl(chatModel.getFileUrl());
     }
 
     @Override
