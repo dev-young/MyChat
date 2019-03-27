@@ -28,6 +28,9 @@ import project.kym.mychat.util.ChatUtil;
 import project.kym.mychat.util.PushUtil;
 import project.kym.mychat.util.RLog;
 
+/**채팅방이 있을경우 해당 채팅방의 채팅 목록을 불러오고
+ * 채팅방이 없을경우 코멘트를 전송시 받아온 유저의 uid 값을 바탕으로 채팅방을 생성한다.
+ * */
 public class MessagePresenter implements MessageContract{
     View view;
     private MessageRecyclerViewAdapterContract.View adapterView;
@@ -121,7 +124,6 @@ public class MessagePresenter implements MessageContract{
                         // 채팅방을 클릭해 들어온 경우
                         RLog.i("채팅방을 클릭해 들어온 경우");
                         view.showProgress(true);
-//            getUsersAndLoadMessagesFromRealTimeDB(chatRoomUid);
                         getUsersAndLoadMessages(chatRoomUid);
                     } else{
                         // 그룹챗을 새로 만들어 들어온 경우, send 버튼을 클릭할 때 방을 생성하고 어뎁터를 만들고 데이터를 불러온다.
