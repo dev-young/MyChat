@@ -56,7 +56,7 @@ public class ChatUtil {
                 WriteBatch batch = firestore.batch();
                 batch.set(reference, message, SetOptions.merge());
 
-                message.put("readUsers", comment.getReadUsers());
+//                message.put("readUsers", comment.getReadUsers());
                 batch.set(reference.collection("comments").document(), message);
 
                 Map<String, Long> users = (Map<String, Long>) document.get("users");

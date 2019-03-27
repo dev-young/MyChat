@@ -118,7 +118,6 @@ public class ChatModel {
         private String fileUrl;  // 파일 경로
         @ServerTimestamp
         private Date timestamp;    // 작성시간
-        private Map<String,Object> readUsers = new HashMap<>();  //읽은 유저 목록
 
         public String getUid() {
             return uid;
@@ -168,14 +167,6 @@ public class ChatModel {
             this.timestamp = timestamp;
         }
 
-        public Map<String, Object> getReadUsers() {
-            return readUsers;
-        }
-
-        public void setReadUsers(Map<String, Object> readUsers) {
-            this.readUsers = readUsers;
-        }
-
         @Override
         public String toString() {
             return "Comment{" +
@@ -185,7 +176,6 @@ public class ChatModel {
                     ", fileName='" + fileName + '\'' +
                     ", fileUrl='" + fileUrl + '\'' +
                     ", timestamp=" + timestamp +
-                    ", readUsers=" + readUsers +
                     '}';
         }
     }

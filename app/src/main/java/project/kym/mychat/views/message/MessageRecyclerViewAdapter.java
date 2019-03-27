@@ -68,7 +68,8 @@ public class MessageRecyclerViewAdapter extends RecyclerView.Adapter<MessageRecy
         ChatModel.Comment comment = comments.get(position);
         String uid = comment.getUid();
         UserModel userModel = users.get(uid);
-        int count = peopleCount - comment.getReadUsers().size();
+//        int count = peopleCount - comment.getReadUsers().size();
+        int count = 0;
 
         if(itemType == TYPE_DATE){
             ((DateMessageViewHolder)viewHolder).setData(comment);
@@ -208,7 +209,7 @@ public class MessageRecyclerViewAdapter extends RecyclerView.Adapter<MessageRecy
     @Override /** Comment의 ReadUsers 수정 */
     public int updateReadUsers(String key, ChatModel.Comment c) {
         int targetPosition = commentMap.get(key);
-        comments.get(targetPosition).setReadUsers(c.getReadUsers());
+//        comments.get(targetPosition).setReadUsers(c.getReadUsers());
         comments.get(targetPosition).setTimestamp(c.getTimestamp());
 //        notifyItemChanged(targetPosition);
         notifyDataSetChanged();

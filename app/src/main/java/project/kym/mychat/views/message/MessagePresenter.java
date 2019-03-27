@@ -151,7 +151,7 @@ public class MessagePresenter implements MessageContract{
                 if (!isContainMyUid(comment_origin)) {
                     RLog.e(comment_origin.getUid() + " 는 내uid를 가지고있지 않다.");
                     ChatModel.Comment comment_motify = comment_origin;
-                    comment_motify.getReadUsers().put(myUid, true);
+//                    comment_motify.getReadUsers().put(myUid, true);
                     readUsersMap.put(key, comment_motify);
                 } else {
                     // 읽은 유저 목록에 내 uid 가 있으면 서버에 요청 없이 그냥 수정한다.
@@ -196,8 +196,8 @@ public class MessagePresenter implements MessageContract{
 
             @Override
             public void onChanged(String key, ChatModel.Comment comment) {
-                if(myUid.equals(comment.getUid()) && comment.getReadUsers().size() == 1)
-                    return;
+//                if(myUid.equals(comment.getUid()) && comment.getReadUsers().size() == 1)
+//                    return;
 
                 adapterModel.updateReadUsers(key, comment);
             }
@@ -217,7 +217,8 @@ public class MessagePresenter implements MessageContract{
     }
 
     private boolean isContainMyUid(ChatModel.Comment comment) {
-        return comment.getReadUsers().containsKey(myUid);
+//        return comment.getReadUsers().containsKey(myUid);
+        return false;
     }
 
     private boolean isLastMessage(ChatModel.Comment comment) {
@@ -321,7 +322,7 @@ public class MessagePresenter implements MessageContract{
         comment.setMessage(message);
         Map<String,Object> readUsers = new HashMap<>();  //읽은 유저 목록
         readUsers.put(myUid, true);
-        comment.setReadUsers(readUsers);
+//        comment.setReadUsers(readUsers);
         return comment;
     }
 
