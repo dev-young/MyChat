@@ -30,6 +30,7 @@ public class MessageRecyclerViewAdapter extends RecyclerView.Adapter<MessageRecy
     List<ChatModel.Comment> comments = new ArrayList<>();
     Map<String, Integer> commentMap = new HashMap<>();    //리스트의 인덱스와 키값을 맵으로 저장 <Comment의 키값, 리스트에서 Comment의 인덱스>
     Map<String, UserModel> users;
+    Map<String, String> lastRead;
     String chatRoomUid;
     String myUid;
 
@@ -69,7 +70,7 @@ public class MessageRecyclerViewAdapter extends RecyclerView.Adapter<MessageRecy
         String uid = comment.getUid();
         UserModel userModel = users.get(uid);
 //        int count = peopleCount - comment.getReadUsers().size();
-        int count = 0;
+        int count = getUnReadUserCount(position);
 
         if(itemType == TYPE_DATE){
             ((DateMessageViewHolder)viewHolder).setData(comment);
@@ -119,6 +120,18 @@ public class MessageRecyclerViewAdapter extends RecyclerView.Adapter<MessageRecy
 
             default:
         }
+    }
+
+    private int getUnReadUserCount(int position) {
+        int count = 0;
+        if(lastRead != null){
+            for(String key : lastRead.values()){
+                if(commentMap.get(key) != null && commentMap.get(key) < position)
+                    count++;
+            }
+        }
+
+        return count;
     }
 
     @Override
@@ -216,6 +229,12 @@ public class MessageRecyclerViewAdapter extends RecyclerView.Adapter<MessageRecy
 //        if(targetPosition > 0)
 //            notifyItemChanged(targetPosition - 1);
         return targetPosition;
+    }
+
+    @Override
+    public void updateReadUsers(Map<String, String> lastRead) {
+        this.lastRead = lastRead;
+        notifyDataSetChanged();
     }
 
     static class MessageViewHodler extends RecyclerView.ViewHolder {

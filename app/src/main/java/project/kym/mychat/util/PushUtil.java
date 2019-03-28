@@ -57,7 +57,7 @@ public class PushUtil {
                 RLog.i();
             }
         };
-        RLog.e(pushTokens.toString());
+//        RLog.e(pushTokens.toString());
         for(String token : pushTokens){
             if(token == null || token.isEmpty())
                 continue;

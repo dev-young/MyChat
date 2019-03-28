@@ -74,7 +74,7 @@ public class MessageRepository {
                     }
                 }
 
-                RLog.d("반복 횟수: " + exCnt);
+//                RLog.d("반복 횟수: " + exCnt);
 
             }
         });
@@ -92,6 +92,7 @@ public class MessageRepository {
                 if (snapshot != null && snapshot.exists()) {
                     RLog.i("Current data: " + snapshot.getData());
                     currentChat = snapshot.toObject(ChatModel.class);
+                    currentChat.setRoomUid(snapshot.getId());
                     listener.onChanged(snapshot.getId(), currentChat.getLastRead());
                 } else {
                     RLog.e("Current data: null");
@@ -100,6 +101,9 @@ public class MessageRepository {
         });
     }
 
+    public ChatModel getCurrentChat() {
+        return currentChat;
+    }
 
     public void stopListen(){
         if (messageLR != null) {

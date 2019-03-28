@@ -154,7 +154,7 @@ public class MessagePresenter implements MessageContract{
 
 
                 // 채팅방에 들어온 시점의 시간과 같거나 그 이후 추가된 comment 이면 서버의 lastRead를 업데이트한다.
-                if(isLastMessage((comment_origin))){
+                if(isLastMessage((comment_origin)) && !comment_origin.getUid().equals(myUid)){
                     RLog.d("서버에 lastRead 업데이트 시작! ");
                     resetUnreadMessageCounter();
                     ChatUtil.updateLastRead(chatRoomUid, myUid, key, new FriestoreListener.Complete<Void>() {
@@ -179,7 +179,7 @@ public class MessagePresenter implements MessageContract{
             @Override
             public void onChanged(String key, Map<String, String> lastRead) {
                 RLog.i(lastRead.toString());
-
+                adapterModel.updateReadUsers(lastRead);
             }
         });
     }
@@ -225,32 +225,34 @@ public class MessagePresenter implements MessageContract{
     @Override
     public void sendMessage(String chatRoomUid, final ChatModel.Comment comment) {
         RLog.d("chatRoomUid = " + chatRoomUid);
-
-        ChatUtil.sendMessage(chatRoomUid, comment, new ChatUtil.SendMessageListener() {
+        ChatModel chatModel = MessageRepository.getInstance().getCurrentChat();
+        ChatUtil.sendMessage(chatModel, comment, new ChatUtil.SendMessageListener() {
             @Override
             public void onSuccess() {
-                ArrayList<String> tokens = new ArrayList<>();
-                for(UserModel item : users.values()){
-                    if(!item.getUid().equals(myUid) && (roomUsers.get(item.getUid()) > -1)){
-                        tokens.add(item.getPushToken());
-                    }
-                }
-                String chatTitle;
-                if(isGroupMessage)
-                    chatTitle = title;
-                else
-                    chatTitle = MyAccount.getInstance().getUserModel().getUserName();
-                PushUtil.sendFCM_Message(tokens,
-                        chatTitle,
-                        comment.getMessage(),
-                        users.get(myUid).getProfileImageUrl(),
-                        isGroupMessage);
-
-
 //                updateLastTimestamp();
             }
         });
+        sendPush(comment);
+    }
 
+    /** Comment 푸시알림으로 전송 */
+    private void sendPush(ChatModel.Comment comment) {
+        ArrayList<String> tokens = new ArrayList<>();
+        for(UserModel item : users.values()){
+            if(!item.getUid().equals(myUid) && (roomUsers.get(item.getUid()) > -1)){
+                tokens.add(item.getPushToken());
+            }
+        }
+        String chatTitle;
+        if(isGroupMessage)
+            chatTitle = title;
+        else
+            chatTitle = MyAccount.getInstance().getUserModel().getUserName();
+        PushUtil.sendFCM_Message(tokens,
+                chatTitle,
+                comment.getMessage(),
+                users.get(myUid).getProfileImageUrl(),
+                isGroupMessage);
     }
 
     @Override /**가장 마지막에 추가된 comments의 timestamp 값을 lastTimestamp에 저장한다. (파이어베이스 내부에서 동작)*/
