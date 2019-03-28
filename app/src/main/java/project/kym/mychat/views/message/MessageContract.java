@@ -11,7 +11,7 @@ public interface MessageContract {
 
     void init(Fragment fragment);
 
-    void loadMessages();
+    void loadMessagesAndListen();
 
     void onSendButtonClicked(String message);
 

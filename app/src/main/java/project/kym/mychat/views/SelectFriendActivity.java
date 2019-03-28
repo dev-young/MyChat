@@ -21,7 +21,7 @@ import project.kym.mychat.R;
 import project.kym.mychat.model.ChatModel;
 import project.kym.mychat.model.UserModel;
 import project.kym.mychat.util.BindingUtil;
-import project.kym.mychat.views.main.people.PeopleRepository;
+import project.kym.mychat.repository.PeopleRepository;
 import project.kym.mychat.views.message.MessageActivity;
 
 public class SelectFriendActivity extends BaseActivity {

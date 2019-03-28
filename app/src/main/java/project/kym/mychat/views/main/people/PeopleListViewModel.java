@@ -7,6 +7,7 @@ import android.view.View;
 import java.util.List;
 
 import project.kym.mychat.model.UserModel;
+import project.kym.mychat.repository.PeopleRepository;
 
 public class PeopleListViewModel {
     public ObservableArrayList<UserModel> userModels = new ObservableArrayList<>();

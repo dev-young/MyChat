@@ -3,16 +3,12 @@ package project.kym.mychat.views.message;
 import android.content.Intent;
 import androidx.annotation.NonNull;
 
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
-import com.google.firebase.firestore.WriteBatch;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -23,8 +19,10 @@ import java.util.Map;
 import androidx.fragment.app.Fragment;
 import project.kym.mychat.model.ChatModel;
 import project.kym.mychat.model.UserModel;
+import project.kym.mychat.repository.MessageRepository;
 import project.kym.mychat.repository.MyAccount;
 import project.kym.mychat.util.ChatUtil;
+import project.kym.mychat.util.FriestoreListener;
 import project.kym.mychat.util.PushUtil;
 import project.kym.mychat.util.RLog;
 
@@ -39,7 +37,7 @@ public class MessagePresenter implements MessageContract{
     private String title;
     private boolean isGroupMessage;
     private Map<String, UserModel> users = new HashMap<>();
-    Map<String, Object> readUsersMap = new HashMap<>();
+//    Map<String, Object> readUsersMap = new HashMap<>();
     String chatRoomUid;
     String myUid;
     private Map<String, Long> roomUsers; // 본인을 제외한 나머지 유저들의 key 맵 <유저들의 key, 유효 여부>
@@ -84,12 +82,12 @@ public class MessagePresenter implements MessageContract{
 
                     } else if(chatRoomUid != null){
                         // 채팅방을 클릭해 들어온 경우
-                        RLog.i("채팅방을 클릭해 들어온 경우");
+                        RLog.d("채팅방을 클릭해 들어온 경우");
                         view.showProgress(true);
 //            getUsersAndLoadMessagesFromRealTimeDB(chatRoomUid);
                         getUsersAndLoadMessages(chatRoomUid);
                     } else{
-                        RLog.i("그룹챗을 새로 만들어 들어온 경우");
+                        RLog.d("그룹챗을 새로 만들어 들어온 경우");
                         // 그룹챗을 새로 만들어 들어온 경우, send 버튼을 클릭할 때 방을 생성하고 어뎁터를 만들고 데이터를 불러온다.
                     }
                 } else {
@@ -122,7 +120,7 @@ public class MessagePresenter implements MessageContract{
 
                     } else if(chatRoomUid != null){
                         // 채팅방을 클릭해 들어온 경우
-                        RLog.i("채팅방을 클릭해 들어온 경우");
+                        RLog.d("채팅방을 클릭해 들어온 경우");
                         view.showProgress(true);
                         getUsersAndLoadMessages(chatRoomUid);
                     } else{
@@ -134,10 +132,10 @@ public class MessagePresenter implements MessageContract{
     }
 
     @Override
-    public void loadMessages() {
-        MessageRepository.getInstance().startListen(chatRoomUid, new MessageRepository.OnEventListener() {
+    public void loadMessagesAndListen() {
+        MessageRepository.getInstance().startListen(chatRoomUid, new MessageRepository.OnEventListener<ChatModel.Comment>() {
             @Override
-            public void onAdded(String key, ChatModel.Comment comment_origin, CollectionReference reference) {
+            public void onAdded(String key, ChatModel.Comment comment_origin) {
                 currentAddedDate = comment_origin.getTimestamp();
                 String addedDate = simpleDateFormat.format(currentAddedDate);
                 if(!lastAddedDate.equals(addedDate)){
@@ -149,59 +147,39 @@ public class MessagePresenter implements MessageContract{
 
                 adapterModel.addItem(key, comment_origin);
 
-                // 추가된 comment에  내 uid가 없으면 readUsers에 put한다.
-                if (!isContainMyUid(comment_origin)) {
-                    RLog.e(comment_origin.getUid() + " 는 내uid를 가지고있지 않다.");
-                    ChatModel.Comment comment_motify = comment_origin;
-//                    comment_motify.getReadUsers().put(myUid, true);
-                    readUsersMap.put(key, comment_motify);
-                } else {
-                    // 읽은 유저 목록에 내 uid 가 있으면 서버에 요청 없이 그냥 수정한다.
-                }
-
                 adapterView.notifyItemInserted();
 //                adapterView.notifyAdapter();  // 이걸 하면 Inserted 애니메이션이 사라진다.
                 adapterView.notifyItemUpdated(adapterModel.getItemsCount()-2);
                 view.scrollToPosition(adapterModel.getItemsCount() -1);
 
-                if (readUsersMap.isEmpty()) {
-                    RLog.e("빈통!!");
-                } else
-                    RLog.e("여기!");
-                // 채팅방에 들어온 시점의 시간과 같거나 그 이후 추가된 comment 이면 readUsersMap을 통해 서버의 comments를 업데이트한다.
-                if(isLastMessage((comment_origin)) && !readUsersMap.isEmpty()){
-                    RLog.i("서버에 readUsers 업데이트 시작! " + readUsersMap.toString());
-                    WriteBatch batch = firestore.batch();
-                    for(String k : readUsersMap.keySet()){
-                        Object o = readUsersMap.get(k);
-                        if(o == null)
-                            RLog.e();
-                        else
-                            RLog.i(o.toString());
-                        batch.set(reference.document(k), readUsersMap.get(k));
-                    }
+
+                // 채팅방에 들어온 시점의 시간과 같거나 그 이후 추가된 comment 이면 서버의 lastRead를 업데이트한다.
+                if(isLastMessage((comment_origin))){
+                    RLog.d("서버에 lastRead 업데이트 시작! ");
                     resetUnreadMessageCounter();
-                    batch.commit().addOnCompleteListener(new OnCompleteListener<Void>() {
+                    ChatUtil.updateLastRead(chatRoomUid, myUid, key, new FriestoreListener.Complete<Void>() {
                         @Override
-                        public void onComplete(@NonNull Task<Void> task) {
-                            if(task.isSuccessful()){
-                                RLog.i("readUsers 업데이트 성공!");
-                                readUsersMap.clear();
-                            }
-                            else{
-                                RLog.e("readUsers 업데이트 실패!  " + task.getException().getMessage());
-                            }
-                        }
+                        public void onCompelete(boolean isSuccess, Void result) {}
                     });
                 }
             }
 
             @Override
             public void onChanged(String key, ChatModel.Comment comment) {
-//                if(myUid.equals(comment.getUid()) && comment.getReadUsers().size() == 1)
-//                    return;
-
                 adapterModel.updateReadUsers(key, comment);
+            }
+        });
+
+        MessageRepository.getInstance().startListenLastRead(chatRoomUid, new MessageRepository.OnEventListener<Map<String, String>>() {
+            @Override
+            public void onAdded(String key, Map<String, String> lastRead) {
+
+            }
+
+            @Override
+            public void onChanged(String key, Map<String, String> lastRead) {
+                RLog.i(lastRead.toString());
+
             }
         });
     }
@@ -224,7 +202,7 @@ public class MessagePresenter implements MessageContract{
     }
 
     private boolean isLastMessage(ChatModel.Comment comment) {
-//        RLog.i("O : " + lastTimestamp);
+//        RLog.d("O : " + lastTimestamp);
 //        RLog.e("N : " + comment.timestamp.getTime());
         boolean b = comment.getTimestamp().getTime() + 750 >= lastTimestamp;
         if(b)
@@ -246,7 +224,7 @@ public class MessagePresenter implements MessageContract{
 
     @Override
     public void sendMessage(String chatRoomUid, final ChatModel.Comment comment) {
-        RLog.i("chatRoomUid = " + chatRoomUid);
+        RLog.d("chatRoomUid = " + chatRoomUid);
 
         ChatUtil.sendMessage(chatRoomUid, comment, new ChatUtil.SendMessageListener() {
             @Override
@@ -311,13 +289,13 @@ public class MessagePresenter implements MessageContract{
         // 노티를 클릭해서 열린 창창
         if(chatRoomUid != null && chatRoomUid.equals(PushUtil.currentRoomUid)){
             PushUtil.currentRoomUid = "";
-            RLog.i("PushUtil.currentRoomUid clear");
+            RLog.d("PushUtil.currentRoomUid clear");
         }
 
     }
 
-
     /**********************************************************************************************/
+
     private ChatModel.Comment makeComment(String message){
         ChatModel.Comment comment = new ChatModel.Comment();
         comment.setUid(myUid);
@@ -333,7 +311,7 @@ public class MessagePresenter implements MessageContract{
     private void makeChatRoomAndSendMessage(final ChatModel.Comment comment){
         view.showProgress(true);
 
-        RLog.i("chatRoomUid == null");
+        RLog.d("chatRoomUid == null");
         view.setSendButtonEnabled(false);
         final ChatModel chatModel = new ChatModel();
         chatModel.getUsers().put(myUid, 0);
@@ -387,7 +365,7 @@ public class MessagePresenter implements MessageContract{
     /** 채팅목록이 아니라 유저 리스트를 클릭하여 채팅방에 들어온 경우 해당 유저와 대화하던 방이 있는지 확인한다.
      * 방이 있을 경우 채팅 기록을 가져온다. */
     void findChatRoom(final String destinationUid) {
-        RLog.i();
+        RLog.d();
         view.showProgress(true);
         firestore.collection("chatrooms").whereGreaterThanOrEqualTo("users."+myUid, 0).get().addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
             @Override
@@ -402,7 +380,7 @@ public class MessagePresenter implements MessageContract{
                 }
                 if(chatRoomUid != null){
                     // 대화하던 방이 있는경우.
-                    RLog.i("채팅방 있음");
+                    RLog.d("채팅방 있음");
                     getUsersAndLoadMessages(chatRoomUid);
                 } else{
                     RLog.e("채팅방 없음");
@@ -415,19 +393,18 @@ public class MessagePresenter implements MessageContract{
 
     /** chatRoomUid 를 바탕으로 채팅방의 lastTimestamp를 가져온다. */
     private void getLastTimestamp(String chatRoomUid) {
-        RLog.i(chatRoomUid);
+        RLog.d(chatRoomUid);
         firestore.collection("chatrooms").document(chatRoomUid).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
             @Override
             public void onSuccess(DocumentSnapshot documentSnapshot) {
                 ChatModel chatModel = documentSnapshot.toObject(ChatModel.class);
                 RLog.e(documentSnapshot.toString());
                 lastTimestamp = chatModel.getTimestamp().getTime();
-                RLog.i(chatModel.getTimestamp().toString() + "  UnixTime: " + lastTimestamp);
+                RLog.d(chatModel.getTimestamp().toString() + "  UnixTime: " + lastTimestamp);
             }
         });
 
     }
-
 
     /** 파이어 스토어 사용 */
     private void getUsersAndLoadMessages(final String chatRoomUid) {
@@ -443,10 +420,10 @@ public class MessagePresenter implements MessageContract{
                             public void onSuccess(DocumentSnapshot snapshot) {
                                 users.put(snapshot.getId(), snapshot.toObject(UserModel.class));
                                 if(users.size() == roomUsers.size()){
-                                    RLog.i("유저 수: " + users.size());
-//                                RLog.i("유저 : " + users.toString());
+                                    RLog.d("유저 수: " + users.size());
+//                                RLog.d("유저 : " + users.toString());
                                     adapterModel.init(users, chatRoomUid, myUid);
-                                    loadMessages();
+                                    loadMessagesAndListen();
                                 }
                             }
                         });
@@ -455,9 +432,9 @@ public class MessagePresenter implements MessageContract{
                 }
             });
         } else {
-            RLog.i("유저 수: " + users.size());
+            RLog.d("유저 수: " + users.size());
             adapterModel.init(users, chatRoomUid, myUid);
-            loadMessages();
+            loadMessagesAndListen();
         }
 
 

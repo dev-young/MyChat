@@ -1,4 +1,4 @@
-package project.kym.mychat.views.main.people;
+package project.kym.mychat.repository;
 
 import androidx.annotation.NonNull;
 

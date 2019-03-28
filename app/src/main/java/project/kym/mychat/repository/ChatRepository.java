@@ -1,4 +1,4 @@
-package project.kym.mychat.views.main.chat;
+package project.kym.mychat.repository;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;

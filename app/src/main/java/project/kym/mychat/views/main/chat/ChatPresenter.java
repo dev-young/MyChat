@@ -4,6 +4,7 @@ import com.google.firebase.auth.FirebaseAuth;
 
 import project.kym.mychat.OnItemClickListner;
 import project.kym.mychat.model.ChatModel;
+import project.kym.mychat.repository.ChatRepository;
 import project.kym.mychat.util.RLog;
 import project.kym.mychat.views.main.chat.adapter.ChatRecyclerAdapter;
 import project.kym.mychat.views.main.chat.adapter.ChatRecyclerAdapterContract;

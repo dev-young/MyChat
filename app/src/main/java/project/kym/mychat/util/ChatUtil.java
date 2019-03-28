@@ -6,8 +6,6 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
@@ -16,6 +14,7 @@ import com.google.firebase.firestore.SetOptions;
 import com.google.firebase.firestore.WriteBatch;
 
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -42,22 +41,14 @@ public class ChatUtil {
     public static void sendMessage(String chatRoomUid, final ChatModel.Comment comment, final SendMessageListener sendMessageListener) {
         final FirebaseFirestore firestore = FirebaseFirestore.getInstance();
         final DocumentReference reference = firestore.collection("chatrooms").document(chatRoomUid);
-        final Map<String, Object> message = new HashMap<>();
-        message.put("uid", comment.getUid());
-        message.put("type", comment.getType());
-        message.put("message", comment.getMessage());
-        message.put("fileName", comment.getFileName());
-        message.put("fileUrl", comment.getFileUrl());
-        message.put("timestamp", FieldValue.serverTimestamp());
-        RLog.e("생성된 메시지: " +message.toString());
+        RLog.e("생성된 메시지: " +comment.toString());
         reference.get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
             @Override
             public void onSuccess(DocumentSnapshot document) {
                 WriteBatch batch = firestore.batch();
-                batch.set(reference, message, SetOptions.merge());
-
-//                message.put("readUsers", comment.getReadUsers());
-                batch.set(reference.collection("comments").document(), message);
+                comment.setTimestamp(new Date());
+                batch.set(reference, comment, SetOptions.merge());
+                batch.set(reference.collection("comments").document(), comment);
 
                 Map<String, Long> users = (Map<String, Long>) document.get("users");
                 for( String key : users.keySet() ){
@@ -69,7 +60,7 @@ public class ChatUtil {
                         .addOnSuccessListener(new OnSuccessListener<Void>() {
                             @Override
                             public void onSuccess(Void aVoid) {
-                                RLog.i("성공적으로 수행!");
+                                RLog.d("성공적으로 수행!");
                                 sendMessageListener.onSuccess();
                             }
                         })
@@ -86,6 +77,30 @@ public class ChatUtil {
 
     }
 
+    public static void updateLastRead(String chatRoomUid, String userUid, String readedUid, FriestoreListener.Complete<Void> listener){
+        FirebaseFirestore.getInstance().collection("chatrooms").document(chatRoomUid).update("lastRead." + userUid, readedUid).addOnCompleteListener(new OnCompleteListener<Void>() {
+            @Override
+            public void onComplete(@NonNull Task<Void> task) {
+                if(task.getException() != null){
+                    task.getException().printStackTrace();
+                    listener.onCompelete(false, null);
+                    return;
+                }
+
+                if (task.isSuccessful()) {
+                    RLog.i("updateLastRead 성공");
+                    listener.onCompelete(true, null);
+                }  else {
+                    RLog.i("updateLastRead 실패");
+                    listener.onCompelete(false, null);
+                }
+
+
+            }
+        });
+    }
+
+
     public interface SendMessageListener{
         void onSuccess();
     }
@@ -93,6 +108,7 @@ public class ChatUtil {
     public interface AddValueListener{
         void onSuccess(String key);
     }
+
 
 
 }

@@ -5,5 +5,6 @@ public interface TodoList {
     // TODO: 2019-03-27 firestore 페이징
     // TODO: 2019-03-27 room을 사용하여 메시지 관리 및 페이징
     // TODO: 2019-03-27 채팅 리스트 정렬
+    // TODO: 2019-03-28 메시지리스너 탈부착 위치 변경
 
 }
