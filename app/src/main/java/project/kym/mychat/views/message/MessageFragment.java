@@ -55,9 +55,9 @@ public class MessageFragment extends Fragment implements MessageContract.View, O
         binding.reclclerview.setLayoutManager(new LinearLayoutManager(getContext()));
         binding.reclclerview.setAdapter(messageRecyclerViewAdapter);
         if(getArguments() != null){
-            presenter.init(this);
+            presenter.init(getArguments());
         } else {
-            presenter.init(getActivity().getIntent());
+            presenter.init(getActivity().getIntent().getExtras());
         }
 
 
@@ -223,7 +223,7 @@ public class MessageFragment extends Fragment implements MessageContract.View, O
 
     @Override
     public void onShow() {
-//        RLog.i();
+        RLog.i();
         int lastItemPosition = binding.reclclerview.getAdapter().getItemCount() - 1;
         if(lastItemPosition > -1 && lastItemPosition == lastVisiblePostionWhenEditTextClicked)
             binding.reclclerview.smoothScrollToPosition(lastItemPosition);
@@ -231,7 +231,7 @@ public class MessageFragment extends Fragment implements MessageContract.View, O
 
     @Override
     public void onHide() {
-//        RLog.i();
+        RLog.i();
     }
 
 

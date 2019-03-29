@@ -15,6 +15,7 @@ import android.widget.TextView;
 
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import project.kym.mychat.R;
@@ -40,11 +41,13 @@ public class SelectFriendActivity extends BaseActivity {
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                ArrayList<String> destinationUIDs = new ArrayList<>();
-                destinationUIDs.addAll(chatModel.getUsers().keySet());
-                Intent intent = new Intent(view.getContext(), MessageActivity.class);
-                intent.putExtra("destinationUids", destinationUIDs);
-                MessageActivity.start(SelectFriendActivity.this, null, destinationUIDs, true);
+//                ArrayList<String> destinationUIDs = new ArrayList<>();
+//                destinationUIDs.addAll(chatModel.getUsers().keySet());
+//                Intent intent = new Intent(view.getContext(), MessageActivity.class);
+//                intent.putExtra("destinationUids", destinationUIDs);
+//                MessageActivity.start(SelectFriendActivity.this, null, destinationUIDs, true);
+
+                MessageActivity.start(SelectFriendActivity.this, null, (HashMap<String, Integer>) chatModel.getUsers(), true, null);
                 finish();
             }
         });

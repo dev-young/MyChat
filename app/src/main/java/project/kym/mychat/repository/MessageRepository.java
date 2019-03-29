@@ -101,6 +101,10 @@ public class MessageRepository {
         });
     }
 
+    public void setCurrentChat(ChatModel currentChat) {
+        this.currentChat = currentChat;
+    }
+
     public ChatModel getCurrentChat() {
         return currentChat;
     }

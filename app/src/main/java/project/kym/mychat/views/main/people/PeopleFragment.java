@@ -49,8 +49,8 @@ public class PeopleFragment extends Fragment implements PeopleListViewContract{
 
     @Override
     public void startDoubleMessageActivity(String destinationUID, String title) {
-        HashMap<String, Long> roomUsers = new HashMap<>();
-        roomUsers.put(destinationUID, 0L);
+        HashMap<String, Integer> roomUsers = new HashMap<>();
+        roomUsers.put(destinationUID, 0);
         MessageActivity.start(getActivity(), null, roomUsers, false, title);
     }
 

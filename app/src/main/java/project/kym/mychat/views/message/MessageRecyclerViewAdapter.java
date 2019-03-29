@@ -122,14 +122,25 @@ public class MessageRecyclerViewAdapter extends RecyclerView.Adapter<MessageRecy
         }
     }
 
+    // TODO: 2019-03-29 뭔가 개선해야할 것 같다... 채팅방에 100명이 있다고 가정하면...
     private int getUnReadUserCount(int position) {
         int count = 0;
+        // 안읽은 사람을 카운트하는 방식
         if(lastRead != null){
             for(String key : lastRead.values()){
-                if(commentMap.get(key) != null && commentMap.get(key) < position)
+                if(commentMap.get(key) == null || commentMap.get(key) < position)
                     count++;
             }
         }
+
+        // 읽은 사람을 빼는 방식
+//        if(lastRead != null){
+//            count = users.size();
+//            for(String key : lastRead.values()){
+//                if(commentMap.get(key) != null && commentMap.get(key) >= position)
+//                    count--;
+//            }
+//        }
 
         return count;
     }

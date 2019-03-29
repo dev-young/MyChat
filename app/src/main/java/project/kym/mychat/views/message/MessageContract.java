@@ -1,15 +1,18 @@
 package project.kym.mychat.views.message;
 
 import android.content.Intent;
+import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
 import project.kym.mychat.model.ChatModel;
 
 public interface MessageContract {
 
-    void init(Intent intent);
+    void init(Bundle bundle);
 
-    void init(Fragment fragment);
+    @Deprecated void init(Intent intent);
+
+    @Deprecated void init(Fragment fragment);
 
     void loadMessagesAndListen();
 

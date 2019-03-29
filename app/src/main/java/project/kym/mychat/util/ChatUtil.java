@@ -51,7 +51,7 @@ public class ChatUtil {
                 batch.set(reference, comment, SetOptions.merge());
                 batch.set(reference.collection("comments").document(), comment);
 
-                Map<String, Long> users = (Map<String, Long>) document.get("users");
+                Map<String, Integer> users = (Map<String, Integer>) document.get("users");
                 for( String key : users.keySet() ){
                     if (!comment.getUid().equals(key)) users.put(key, users.get(key)+1);
                 }
@@ -77,7 +77,7 @@ public class ChatUtil {
 
 
     }
-
+    /** 서버에 Comment 추가 및 lastRead 갱싱 */
     public static void sendMessage(ChatModel chatModel, final ChatModel.Comment comment, final SendMessageListener sendMessageListener) {
 //        RLog.d("생성된 메시지: " +comment.toString());
         final FirebaseFirestore firestore = FirebaseFirestore.getInstance();

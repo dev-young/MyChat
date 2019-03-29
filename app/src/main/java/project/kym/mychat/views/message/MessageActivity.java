@@ -5,6 +5,7 @@ import android.app.ActivityOptions;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Rect;
 import android.os.Build;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
@@ -16,10 +17,12 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -29,10 +32,10 @@ import java.util.HashMap;
 import project.kym.mychat.R;
 import project.kym.mychat.util.RLog;
 import project.kym.mychat.views.BaseActivity;
+import project.kym.mychat.views.OnShowKeyboardListener;
 import project.kym.mychat.views.main.MainActivity;
 
 public class MessageActivity extends BaseActivity{
-
     public static void start(Activity from, String chatRoomUid, ArrayList<String> destinationUIDs, boolean isGroupMessage){
         Intent intent = new Intent(from, MessageActivity.class);
         if(chatRoomUid != null)
@@ -48,7 +51,7 @@ public class MessageActivity extends BaseActivity{
         }
     }
 
-    public static void start(Activity from, String chatRoomUid, HashMap<String, Long> roomUsers, boolean isGroupMessage, String title) {
+    public static void start(Activity from, String chatRoomUid, HashMap<String, Integer> roomUsers, boolean isGroupMessage, String title) {
         Intent intent = new Intent(from, MessageActivity.class);
         if (chatRoomUid != null)
             intent.putExtra("chatRoomUid", chatRoomUid);
@@ -65,6 +68,11 @@ public class MessageActivity extends BaseActivity{
         }
     }
 
+    private OnShowKeyboardListener showKeyboardListener;
+    private ViewTreeObserver.OnGlobalLayoutListener globalLayoutListener;
+    boolean isKeyboardVisible = false;
+    private FrameLayout frameLayout;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -77,9 +85,39 @@ public class MessageActivity extends BaseActivity{
             getSupportActionBar().setTitle(intent.getStringExtra("title"));
         }
 
+        frameLayout = findViewById(R.id.messageFrame2);
+
+        MessageFragment messageFragment = new MessageFragment();
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-        transaction.replace(R.id.messageFrame2, new MessageFragment());
+        transaction.replace(R.id.messageFrame2, messageFragment);
         transaction.commit();
+        showKeyboardListener = messageFragment;
+
+        //키보드 이벤트 제어
+        globalLayoutListener = new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                //r will be populated with the coordinates of your view that area still visible.
+                Rect r = new Rect();
+                frameLayout.getWindowVisibleDisplayFrame(r);
+                int heightDiff = frameLayout.getRootView().getHeight() - (r.bottom - r.top);
+                RLog.i();
+                if(heightDiff > 400) { // if more than 100 pixels, its probably a keyboard...
+                    if(!isKeyboardVisible){
+                        isKeyboardVisible = true;
+                        if(showKeyboardListener != null)
+                            showKeyboardListener.onShow();
+                    }
+
+                } else {
+                    if(isKeyboardVisible){
+                        isKeyboardVisible = false;
+                        if(showKeyboardListener != null)
+                            showKeyboardListener.onHide();
+                    }
+                }
+            }
+        };
     }
 
     @Override
@@ -96,9 +134,25 @@ public class MessageActivity extends BaseActivity{
         } else {
             RLog.e();
         }
+    }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
 
+        if(globalLayoutListener != null){
+            RLog.i("globalLayoutListener 추가!");
+            frameLayout.getRootView().getViewTreeObserver().addOnGlobalLayoutListener(globalLayoutListener);
+        }
+    }
 
+    @Override
+    protected void onPause() {
+        if(globalLayoutListener != null){
+            RLog.i("globalLayoutListener 제거!");
+            frameLayout.getRootView().getViewTreeObserver().removeOnGlobalLayoutListener(globalLayoutListener);
+        }
+        super.onPause();
     }
 
     @Override

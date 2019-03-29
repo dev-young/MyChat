@@ -1,6 +1,8 @@
 package project.kym.mychat.views.message;
 
 import android.content.Intent;
+import android.os.Bundle;
+
 import androidx.annotation.NonNull;
 
 import com.google.android.gms.tasks.OnFailureListener;
@@ -40,7 +42,7 @@ public class MessagePresenter implements MessageContract{
 //    Map<String, Object> readUsersMap = new HashMap<>();
     String chatRoomUid;
     String myUid;
-    private Map<String, Long> roomUsers; // 본인을 제외한 나머지 유저들의 key 맵 <유저들의 key, 유효 여부>
+    private Map<String, Integer> roomUsers; // 본인을 제외한 나머지 유저들의 key 맵 <유저들의 key, 유효 여부>
     long lastTimestamp; // 어뎁터가 만들어진 시점의 채팅방 lastTimestamp
     private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy. MM. dd (E)");
     private Date currentAddedDate = new Date();
@@ -60,6 +62,40 @@ public class MessagePresenter implements MessageContract{
     }
 
     @Override
+    public void init(Bundle bundle) {
+        //채팅을 요구 하는 아아디 즉 단말기에 로그인된 UID
+        MyAccount.getInstance().getUserModel(new MyAccount.OnCompleteListener() {
+            @Override
+            public void onComplete(boolean isSuccess, UserModel userModel) {
+                if(isSuccess){
+                    myUid = userModel.getUid();
+                    // 그룹 채팅방 여부
+                    isGroupMessage = bundle.getBoolean("isGroupMessage", false);
+                    // 유저들을 선택하여 새로 채팅방을 만들려고 시도할 경우 값이 넘어온다.
+                    roomUsers = (Map<String, Integer>) bundle.getSerializable("destinationUids");
+                    // 채팅방 uid
+                    chatRoomUid = bundle.getString("chatRoomUid");
+                    //채팅방 이름
+                    title = bundle.getString("title");
+
+                    if(chatRoomUid == null && !isGroupMessage){
+                        // 유저 목록에서 유저를 선택한 경우
+                        findChatRoom(roomUsers.keySet().iterator().next());
+
+                    } else if(chatRoomUid != null){
+                        // 채팅방을 클릭해 들어온 경우
+                        RLog.d("채팅방을 클릭해 들어온 경우");
+                        view.showProgress(true);
+                        getUsersAndLoadMessages(chatRoomUid);
+                    } else{
+                        // 그룹챗을 새로 만들어 들어온 경우, send 버튼을 클릭할 때 방을 생성하고 어뎁터를 만들고 데이터를 불러온다.
+                    }
+                }
+            }
+        });
+    }
+
+    @Override
     public void init(Intent intent) {
         //채팅을 요구 하는 아아디 즉 단말기에 로그인된 UID
         MyAccount.getInstance().getUserModel(new MyAccount.OnCompleteListener() {
@@ -70,7 +106,7 @@ public class MessagePresenter implements MessageContract{
                     // 그룹 채팅방 여부
                     isGroupMessage = intent.getBooleanExtra("isGroupMessage", false);
                     // 유저들을 선택하여 새로 채팅방을 만들려고 시도할 경우 값이 넘어온다.
-                    roomUsers = (Map<String, Long>) intent.getSerializableExtra("destinationUids");
+                    roomUsers = (Map<String, Integer>) intent.getSerializableExtra("destinationUids");
                     // 채팅방 uid
                     chatRoomUid = intent.getStringExtra("chatRoomUid");
                     //채팅방 이름
@@ -108,7 +144,7 @@ public class MessagePresenter implements MessageContract{
                     // 그룹 채팅방 여부
                     isGroupMessage = fragment.getArguments().getBoolean("isGroupMessage", false);
                     // 유저들을 선택하여 새로 채팅방을 만들려고 시도할 경우 값이 넘어온다.
-                    roomUsers = (Map<String, Long>) fragment.getArguments().getSerializable("destinationUids");
+                    roomUsers = (Map<String, Integer>) fragment.getArguments().getSerializable("destinationUids");
                     // 채팅방 uid
                     chatRoomUid = fragment.getArguments().getString("chatRoomUid");
                     //채팅방 이름
@@ -189,8 +225,8 @@ public class MessagePresenter implements MessageContract{
         firestore.collection("chatrooms").document(chatRoomUid).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
             @Override
             public void onSuccess(DocumentSnapshot document) {
-                Map<String, Long> users = (Map<String, Long>) document.get("users");
-                users.put(myUid, 0L);
+                Map<String, Integer> users = (Map<String, Integer>) document.get("users");
+                users.put(myUid, 0);
                 document.getReference().update("users", users);
             }
         });
@@ -317,8 +353,11 @@ public class MessagePresenter implements MessageContract{
         view.setSendButtonEnabled(false);
         final ChatModel chatModel = new ChatModel();
         chatModel.getUsers().put(myUid, 0);
-        for(String s : roomUsers.keySet())
+        chatModel.getLastRead().put(myUid, "");
+        for(String s : roomUsers.keySet()){
             chatModel.getUsers().put(s, 0);
+            chatModel.getLastRead().put(s, "");
+        }
         chatModel.setGroup(isGroupMessage);
         for(String key : chatModel.getUsers().keySet()){
             firestore.collection("users").document(key).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
@@ -344,6 +383,8 @@ public class MessagePresenter implements MessageContract{
                             @Override
                             public void onSuccess(String key) {
                                 chatRoomUid = key;
+                                chatModel.setRoomUid(key);
+                                MessageRepository.getInstance().setCurrentChat(chatModel);
                                 PushUtil.currentRoomUid = key;
                                 getUsersAndLoadMessages(chatRoomUid);
                                 if(!users.isEmpty())
@@ -415,7 +456,9 @@ public class MessagePresenter implements MessageContract{
             firestore.collection("chatrooms").document(chatRoomUid).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
                 @Override
                 public void onSuccess(DocumentSnapshot documentSnapshot) {
-                    roomUsers = (Map<String, Long>) documentSnapshot.get("users");
+                    ChatModel chatModel = documentSnapshot.toObject(ChatModel.class);
+                    chatModel.setRoomUid(documentSnapshot.getId());
+                    roomUsers = chatModel.getUsers();
                     for(String key : roomUsers.keySet()){
                         firestore.collection("users").document(key).get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
                             @Override
