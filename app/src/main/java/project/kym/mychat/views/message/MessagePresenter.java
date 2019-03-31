@@ -75,6 +75,7 @@ public class MessagePresenter implements MessageContract{
                     roomUsers = (Map<String, Integer>) bundle.getSerializable("destinationUids");
                     // 채팅방 uid
                     chatRoomUid = bundle.getString("chatRoomUid");
+                    PushUtil.currentRoomUid = chatRoomUid;
                     //채팅방 이름
                     title = bundle.getString("title");
 
@@ -202,7 +203,7 @@ public class MessagePresenter implements MessageContract{
 
             @Override
             public void onChanged(String key, ChatModel.Comment comment) {
-                adapterModel.updateReadUsers(key, comment);
+                adapterModel.updateItem(key, comment);
             }
         });
 
@@ -286,6 +287,7 @@ public class MessagePresenter implements MessageContract{
             chatTitle = MyAccount.getInstance().getUserModel().getUserName();
         PushUtil.sendFCM_Message(tokens,
                 chatTitle,
+                MyAccount.getInstance().getUserModel().getUserName(),
                 comment.getMessage(),
                 users.get(myUid).getProfileImageUrl(),
                 isGroupMessage);
@@ -338,9 +340,7 @@ public class MessagePresenter implements MessageContract{
         ChatModel.Comment comment = new ChatModel.Comment();
         comment.setUid(myUid);
         comment.setMessage(message);
-        Map<String,Object> readUsers = new HashMap<>();  //읽은 유저 목록
-        readUsers.put(myUid, true);
-//        comment.setReadUsers(readUsers);
+//        comment.setTimestamp(new Date());
         return comment;
     }
 

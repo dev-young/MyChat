@@ -23,6 +23,7 @@ import com.google.firebase.messaging.RemoteMessage;
 
 import project.kym.mychat.R;
 import project.kym.mychat.util.PushUtil;
+import project.kym.mychat.util.VibrateUtil;
 import project.kym.mychat.views.message.MessageActivity;
 
 public class MyFirebaseMessagingService extends FirebaseMessagingService {
@@ -31,17 +32,18 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 //        RLog.i();
         // Check if message contains a data payload.
         if (remoteMessage.getData().size() > 0) {
-            String title = remoteMessage.getData().get("title").toString();
-            String text = remoteMessage.getData().get("text").toString();
-            String photo = remoteMessage.getData().get("photoUrl").toString();
-            String roomUid = remoteMessage.getData().get("roomUid").toString();
+            String title = remoteMessage.getData().get("title");
+            String body = remoteMessage.getData().get("text");
+            String photo = remoteMessage.getData().get("photoUrl");
+            String roomUid = remoteMessage.getData().get("roomUid");
+            String roomName = remoteMessage.getData().get("roomName");
             boolean isGroup = Boolean.parseBoolean(remoteMessage.getData().get("isGroup"));
             if(!roomUid.equals(PushUtil.currentRoomUid)){
-                //수신받은 메시지가 현제 보고 있는 채팅방이 아닐 경우에만 수신한다.
+                //수신받은 메시지가 현재 보고 있는 채팅방이 아닐 경우에만 수신한다.
                 PushUtil.lastNotifiedRoomUid = roomUid;
-                sendNotification(title,text,photo, roomUid, isGroup);
+                sendMessageNotification(roomName, title, body, photo, roomUid, isGroup);
                 //진동은 여기서 그냥 실행하는게 더 편하다.. 노티 잘 동작 안한다...
-                startVibrate(true);
+                VibrateUtil.startVibrate(getApplicationContext());
             }
 
 
@@ -62,19 +64,12 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
     }
 
-    private void startVibrate(boolean vibrate){
-        if(vibrate){
-            Vibrator vibrator = (Vibrator)getSystemService(Context.VIBRATOR_SERVICE);
-            vibrator.vibrate(800); // 1초간 진동
-        }
-
-    }
-
-    private void sendNotification(String title, String text, String photoUrl, String roomUid, boolean isGroup) {
+    private void sendMessageNotification(String roomName, String title, String text, String photoUrl, String roomUid, boolean isGroup) {
 //        Intent intent = new Intent(this, MainActivity.class);
         Intent intent = new Intent(this, MessageActivity.class);
         intent.putExtra("chatRoomUid", roomUid);
         intent.putExtra("isGroupMessage", isGroup);
+        intent.putExtra("title", roomName);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent,
                 PendingIntent.FLAG_ONE_SHOT);

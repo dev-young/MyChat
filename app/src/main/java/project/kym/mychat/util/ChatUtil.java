@@ -89,6 +89,7 @@ public class ChatUtil {
                     task.getException().printStackTrace();
                     return;
                 }
+
                 String addedUid = task.getResult().getId();
 
                 if (task.isSuccessful()) {

@@ -230,6 +230,15 @@ public class MessageRecyclerViewAdapter extends RecyclerView.Adapter<MessageRecy
         commentMap.put(key, comments.size()-1);
     }
 
+    @Override
+    public int updateItem(String key, ChatModel.Comment c) {
+        int targetPosition = commentMap.get(key);
+        comments.set(targetPosition, c);
+//        notifyItemChanged(targetPosition);
+        notifyDataSetChanged();
+        return targetPosition;
+    }
+
     @Override /** Comment의 ReadUsers 수정 */
     public int updateReadUsers(String key, ChatModel.Comment c) {
         int targetPosition = commentMap.get(key);

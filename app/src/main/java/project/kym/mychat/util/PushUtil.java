@@ -29,8 +29,9 @@ public class PushUtil {
     public static String lastNotifiedRoomUid = "";  // 가장 마지막으로 Notified 된 채팅방의 uid
 
     /** 클라우드 메시지 전송 (푸시) */
-    public static void sendFCM_Message(List<String> pushTokens, String title, String body, String photoUrl, boolean isGroup) {
+    public static void sendFCM_Message(List<String> pushTokens, String roomName, String title, String body, String photoUrl, boolean isGroup) {
         NotificationModel.MessageData messageData = new NotificationModel.MessageData();
+        messageData.roomName = roomName;
         messageData.title = title;
         messageData.text = body;
         messageData.photoUrl = photoUrl;

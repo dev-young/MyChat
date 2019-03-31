@@ -31,6 +31,8 @@ public interface MessageRecyclerViewAdapterContract {
 
         void addItem(String key, ChatModel.Comment comment);
 
+        int updateItem(String key, ChatModel.Comment c);
+
         int updateReadUsers(String key, ChatModel.Comment c);
 
         void updateReadUsers(Map<String, String> lastRead);
