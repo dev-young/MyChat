@@ -173,6 +173,7 @@ public class MessagePresenter implements MessageContract{
         MessageRepository.getInstance().startListen(chatRoomUid, new MessageRepository.OnEventListener<ChatModel.Comment>() {
             @Override
             public void onAdded(String key, ChatModel.Comment comment_origin) {
+                //이전에 들어온 값과 날짜가 다를 경우 새로 들어온 날짜를 표시하는 데이터를 추가한다.
                 currentAddedDate = comment_origin.getTimestamp();
                 String addedDate = simpleDateFormat.format(currentAddedDate);
                 if(!lastAddedDate.equals(addedDate)){
@@ -187,17 +188,24 @@ public class MessagePresenter implements MessageContract{
                 adapterView.notifyItemInserted();
 //                adapterView.notifyAdapter();  // 이걸 하면 Inserted 애니메이션이 사라진다.
                 adapterView.notifyItemUpdated(adapterModel.getItemsCount()-2);
-                view.scrollToPosition(adapterModel.getItemsCount() -1);
-
 
                 // 채팅방에 들어온 시점의 시간과 같거나 그 이후 추가된 comment 이면 서버의 lastRead를 업데이트한다.
-                if(isLastMessage((comment_origin)) && !comment_origin.getUid().equals(myUid)){
-                    RLog.d("서버에 lastRead 업데이트 시작! ");
-                    resetUnreadMessageCounter();
-                    ChatUtil.updateLastRead(chatRoomUid, myUid, key, new FriestoreListener.Complete<Void>() {
-                        @Override
-                        public void onCompelete(boolean isSuccess, Void result) {}
-                    });
+                if(isLastMessage((comment_origin))){
+                    if(comment_origin.getUid().equals(myUid)){
+                        // 내가 새로 작성한 메시지일 경우 스크롤을 아래로 내린다.
+                        view.scrollToLastPosition(true);
+                    } else {
+                        // 상대방이 새로 작성한 메시지일 경우 스크롤 위치에 따라 스크롤을 아래로 내린다.
+                        view.scrollToLastPosition(false);
+                        RLog.d("서버에 lastRead 업데이트 시작! ");
+                        resetUnreadMessageCounter();
+                        ChatUtil.updateLastRead(chatRoomUid, myUid, key, new FriestoreListener.Complete<Void>() {
+                            @Override
+                            public void onCompelete(boolean isSuccess, Void result) {}
+                        });
+                    }
+                } else {
+                    view.scrollToLastPosition(true);
                 }
             }
 

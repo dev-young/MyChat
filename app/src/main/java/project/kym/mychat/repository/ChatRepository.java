@@ -7,6 +7,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.firestore.DocumentChange;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
@@ -42,6 +43,7 @@ public class ChatRepository {
 
     private FirebaseFirestore firestore;
     private ListenerRegistration listenerRegistration;
+    private final DocumentSnapshot.ServerTimestampBehavior behavior = DocumentSnapshot.ServerTimestampBehavior.ESTIMATE;    // 시간이 늦게 적용되는 문제를 해결해준다.
 
     public void startListen(String myUid, final OnEventListener listener){
         listenerRegistration = firestore.collection("chatrooms").whereGreaterThanOrEqualTo("users."+myUid, 0).addSnapshotListener(new EventListener<QuerySnapshot>() {
@@ -58,8 +60,8 @@ public class ChatRepository {
                     chatModel.setRoomUid(key);
                     switch (change.getType()) {
                         case ADDED:
-//                            if(chatModel.timestamp == null)
-//                                chatModel.timestamp = change.getDocument().getDate("timestamp", behavior);
+                            if(chatModel.getTimestamp() == null)
+                                chatModel.setTimestamp(change.getDocument().getDate("timestamp", behavior));
 
                             listener.onAdded(key, chatModel);
                             RLog.i("데이터 추가! " + chatModel.toString());

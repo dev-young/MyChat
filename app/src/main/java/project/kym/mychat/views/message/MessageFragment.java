@@ -177,13 +177,26 @@ public class MessageFragment extends Fragment implements MessageContract.View, O
     }
 
     @Override
+    public void scrollToLastPosition(boolean forced) {
+        int lastItemPosition = binding.reclclerview.getAdapter().getItemCount() - 1;
+        if(forced){
+            binding.reclclerview.scrollToPosition(lastItemPosition);
+        } else {
+            lastVisiblePostionWhenEditTextClicked = ((LinearLayoutManager) binding.reclclerview.getLayoutManager()).findLastCompletelyVisibleItemPosition();
+            if(lastItemPosition > -1 && lastItemPosition - lastVisiblePostionWhenEditTextClicked < 3)
+                binding.reclclerview.scrollToPosition(lastItemPosition);
+        }
+
+    }
+
+    @Override
     public void scrollToPosition(int position) {
-        binding.reclclerview.scrollToPosition(position);
+        binding.reclclerview.smoothScrollToPosition(position);
     }
 
     @Override
     public void setSendButtonEnabled(boolean enabled) {
-        binding.submitText.setEnabled(enabled); // 이거 유효한가..?
+//        binding.submitText.setEnabled(enabled); // 이거 유효한가..?
         binding.submitbutton.setEnabled(enabled);
         if(enabled){
 //            binding.inActivateSubmitButton.setVisibility(View.GONE);
@@ -225,7 +238,7 @@ public class MessageFragment extends Fragment implements MessageContract.View, O
         RLog.i();
         int lastItemPosition = binding.reclclerview.getAdapter().getItemCount() - 1;
         if(lastItemPosition > -1 && lastItemPosition == lastVisiblePostionWhenEditTextClicked)
-            binding.reclclerview.smoothScrollToPosition(lastItemPosition);
+            binding.reclclerview.scrollToPosition(lastItemPosition);
     }
 
     @Override

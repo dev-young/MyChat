@@ -34,6 +34,8 @@ public interface MessageContract {
 
         void setTitlebar(String title);
 
+        void scrollToLastPosition(boolean forced);
+
         void scrollToPosition(int position);
 
         void setSendButtonEnabled(boolean enabled);
