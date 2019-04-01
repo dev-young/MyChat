@@ -36,8 +36,6 @@ public class MessageFragment extends Fragment implements MessageContract.View, O
     // 에디트 텍스트가 클릭될때 어뎁터에 표시된 마지막 아이템 포지션
     private int lastVisiblePostionWhenEditTextClicked = 0;  // 이 값을 통해 키보드가 올라올 당시 스크롤 이벤트를 발생시킬지 여부 결정
 
-    private boolean isKeyboardVisible;
-
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -168,6 +166,7 @@ public class MessageFragment extends Fragment implements MessageContract.View, O
     @Override
     public void onDestroy() {
         RLog.i();
+        presenter.onDestroy();
         super.onDestroy();
     }
 

@@ -43,11 +43,10 @@ public class ChatPresenter implements ChatContract, OnItemClickListner {
         ChatRepository.getInstance().startListen(myUid, new ChatRepository.OnEventListener() {
             @Override
             public void onAdded(String key, ChatModel chatModel) {
-                chatModel.setRoomUid(key);
                 adapterModel.addItem(key, chatModel);
                 adapterView.notifyAdapter();
 
-                if(adapterModel.getItems().isEmpty()){
+                if(adapterModel.getItems().size() < 1){
                     view.showNoChatMessage(true);
                 } else {
                     view.showNoChatMessage(false);

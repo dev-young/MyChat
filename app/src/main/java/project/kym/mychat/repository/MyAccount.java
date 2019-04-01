@@ -25,8 +25,6 @@ public class MyAccount {
 //        userModel = new UserModel();
     }
 
-    private OnSelectedGroupChangeListener groupChangeListener;
-
     private int accountProvider;
     private UserModel userModel;
 
@@ -94,10 +92,6 @@ public class MyAccount {
                     return;
                 }
                 if(task.isSuccessful()){
-                    if(isSelectedGroupChanged(userModel.getGroupUid(), newModel.getGroupUid()) && groupChangeListener != null){
-                        groupChangeListener.onChanged();
-                        RLog.i("선택그룹 업데이트 성공!");
-                    }
                     userModel = newModel;
                     if(listener != null)
                         listener.onComplete(true, userModel);
@@ -108,23 +102,6 @@ public class MyAccount {
                 }
             }
         });
-    }
-
-    /** 선택 그룹이 바뀌었는지 확인 */
-    private boolean isSelectedGroupChanged(String oldUid, String newUid) {
-        if((oldUid == null && newUid != null) || (oldUid != null && newUid == null)){
-            RLog.e("1");
-            return true;
-        }
-        else if(oldUid != null && newUid != null && !oldUid.equals(newUid)) {
-            RLog.e("2");
-            return true;
-        } else if(oldUid == null && newUid == null){
-            RLog.e("3");
-        }
-
-        RLog.e("4");
-        return false;
     }
 
 
@@ -146,9 +123,9 @@ public class MyAccount {
         return accountProvider;
     }
 
-
-    public void setGroupChangeListener(OnSelectedGroupChangeListener groupChangeListener) {
-        this.groupChangeListener = groupChangeListener;
+    public void logout() {
+        userModel = null;
+        FirebaseAuth.getInstance().signOut();
     }
 
 
@@ -158,9 +135,5 @@ public class MyAccount {
 
     public interface OnUpdateCompleteListener{
         void onComplete(boolean isSuccess, String key);
-    }
-
-    public interface OnSelectedGroupChangeListener{
-        void onChanged();
     }
 }

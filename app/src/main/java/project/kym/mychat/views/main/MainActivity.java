@@ -10,6 +10,7 @@ import android.view.View;
 import com.google.firebase.auth.FirebaseAuth;
 
 import project.kym.mychat.R;
+import project.kym.mychat.repository.MyAccount;
 import project.kym.mychat.views.BaseActivity;
 import project.kym.mychat.views.LoginActivity;
 import project.kym.mychat.views.main.account.AccountFragment;
@@ -64,7 +65,7 @@ public class MainActivity extends BaseActivity {
         removeTokenfromServer();
 
         //로그아웃
-        FirebaseAuth.getInstance().signOut();
+        MyAccount.getInstance().logout();
         Intent intent = new Intent(this,LoginActivity.class);
         startActivity(intent);
         finish();

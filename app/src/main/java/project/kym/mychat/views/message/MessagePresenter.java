@@ -322,9 +322,6 @@ public class MessagePresenter implements MessageContract{
 
     @Override
     public void onStop() {
-
-        MessageRepository.getInstance().stopListen();
-
         // 실제로 보여지고 있던 프레젠터가 사라질 경우만  PushUtil.currentRoomUid 값을 초기화 한다.
         // 노티를 클릭해서 열린 창창
         if(chatRoomUid != null && chatRoomUid.equals(PushUtil.currentRoomUid)){
@@ -332,6 +329,11 @@ public class MessagePresenter implements MessageContract{
             RLog.d("PushUtil.currentRoomUid clear");
         }
 
+    }
+
+    @Override
+    public void onDestroy() {
+        MessageRepository.getInstance().stopListen();
     }
 
     /**********************************************************************************************/

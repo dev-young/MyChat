@@ -55,6 +55,7 @@ public class ChatRepository {
                 for (DocumentChange change : queryDocumentSnapshots.getDocumentChanges()) {
                     String key = change.getDocument().getId();
                     ChatModel chatModel= change.getDocument().toObject(ChatModel.class);
+                    chatModel.setRoomUid(key);
                     switch (change.getType()) {
                         case ADDED:
 //                            if(chatModel.timestamp == null)

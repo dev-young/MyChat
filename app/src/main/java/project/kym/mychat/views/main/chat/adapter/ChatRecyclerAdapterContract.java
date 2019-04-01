@@ -2,6 +2,7 @@ package project.kym.mychat.views.main.chat.adapter;
 
 import java.util.List;
 
+import androidx.recyclerview.widget.SortedList;
 import project.kym.mychat.OnItemClickListner;
 import project.kym.mychat.model.ChatModel;
 
@@ -18,7 +19,7 @@ public interface ChatRecyclerAdapterContract {
 
         ChatModel getItem(int position);
 
-        List<ChatModel> getItems();
+        SortedList<ChatModel> getItems();
 
         void addItems(boolean isClear, List<ChatModel> models);
 

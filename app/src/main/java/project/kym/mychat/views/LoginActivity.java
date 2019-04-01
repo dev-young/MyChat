@@ -18,6 +18,8 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 
 import androidx.annotation.NonNull;
 import project.kym.mychat.R;
+import project.kym.mychat.model.UserModel;
+import project.kym.mychat.repository.MyAccount;
 import project.kym.mychat.util.RLog;
 import project.kym.mychat.views.main.MainActivity;
 
@@ -78,9 +80,17 @@ public class LoginActivity extends BaseActivity {
                     RLog.i("로그인 성공");
                     RLog.i(user.getEmail());
                     RLog.i(user.getUid());
-                    Intent intent = new Intent(LoginActivity.this,MainActivity.class);
-                    startActivity(intent);
-                    finish();
+                    MyAccount.getInstance().load(new MyAccount.OnCompleteListener() {
+                        @Override
+                        public void onComplete(boolean isSuccess, UserModel userModel) {
+                            if(isSuccess){
+                                Intent intent = new Intent(LoginActivity.this,MainActivity.class);
+                                startActivity(intent);
+                                finish();
+                            }
+                        }
+                    });
+
                 }else{
                     //로그아웃
                 }

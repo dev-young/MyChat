@@ -28,6 +28,8 @@ public interface MessageContract {
 
     void onStop();
 
+    void onDestroy();
+
     interface View{
 
         void setTitlebar(String title);

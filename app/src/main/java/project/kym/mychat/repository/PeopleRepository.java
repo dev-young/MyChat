@@ -14,7 +14,9 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import project.kym.mychat.model.UserModel;
 import project.kym.mychat.util.RLog;
@@ -31,36 +33,58 @@ public class PeopleRepository {
         return instance;
     }
 
+    private Map<String, UserModel> userModelMap = new HashMap<>();
+
     public void getPeopleList(final OnUserModelListListener onUserModelListListener){
-//        getPeopleListFromRealTimeDB(onUserModelListListener);
         getPeopleListFromFireStore(onUserModelListListener);
     }
 
-    private void getPeopleListFromFireStore(final OnUserModelListListener onUserModelListListener){
-        final String myUid = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        FirebaseFirestore.getInstance().collection("users").get()
-                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                    @Override
-                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                        List<UserModel> userModels = new ArrayList<>();
-                        for(QueryDocumentSnapshot snapshot : queryDocumentSnapshots){
-                            UserModel userModel = snapshot.toObject(UserModel.class);
-                            if(userModel.getUid() != null && userModel.getUid().equals(myUid)){
-                                continue;
-                            }
-                            userModels.add(userModel);
-                        }
-                        onUserModelListListener.onSuccess(userModels);
-                    }
+    private List<UserModel> getList(){
+        List<UserModel> userModels = new ArrayList<>();
+        for(UserModel model : userModelMap.values()){
+            userModels.add(model);
+        }
 
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        RLog.e(e.getMessage());
-                        onUserModelListListener.onError(e.getMessage());
+        return userModels;
+    }
+
+    private void getPeopleListFromFireStore(final OnUserModelListListener onUserModelListListener){
+        MyAccount.getInstance().getUserModel(new MyAccount.OnCompleteListener() {
+            @Override
+            public void onComplete(boolean isSuccess, UserModel userModel) {
+                if (isSuccess) {
+                    final String myUid = userModel.getUid();
+                    if(userModelMap.isEmpty()){
+                        FirebaseFirestore.getInstance().collection("users").get()
+                                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                                    @Override
+                                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                                        for(QueryDocumentSnapshot snapshot : queryDocumentSnapshots){
+                                            UserModel userModel = snapshot.toObject(UserModel.class);
+                                            if(userModel.getUid() != null && userModel.getUid().equals(myUid)){
+                                                continue;
+                                            }
+                                            userModelMap.put(snapshot.getId(), userModel);
+                                        }
+                                        onUserModelListListener.onSuccess(getList());
+                                    }
+
+                                })
+                                .addOnFailureListener(new OnFailureListener() {
+                                    @Override
+                                    public void onFailure(@NonNull Exception e) {
+                                        RLog.e(e.getMessage());
+                                        onUserModelListListener.onError(e.getMessage());
+                                    }
+                                });
+                    } else {
+                        onUserModelListListener.onSuccess(getList());
                     }
-                });
+                } else {
+                    onUserModelListListener.onError("");
+                }
+            }
+        });
     }
 
     @Deprecated

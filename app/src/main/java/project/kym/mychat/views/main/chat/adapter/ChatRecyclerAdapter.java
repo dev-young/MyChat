@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import androidx.recyclerview.widget.SortedList;
 import project.kym.mychat.OnItemClickListner;
 import project.kym.mychat.R;
 import project.kym.mychat.model.ChatModel;
@@ -31,7 +32,7 @@ import project.kym.mychat.util.RLog;
 
 public class ChatRecyclerAdapter extends  RecyclerView.Adapter<ChatRecyclerAdapter.CustomViewHolder> implements ChatRecyclerAdapterContract.View, ChatRecyclerAdapterContract.Model{
     Map<String, Integer> positionMap = new HashMap<>();    //리스트의 인덱스와 키값을 맵으로 저장 <ChatModel의 키값, 리스트에서 ChatModel의 인덱스>
-    private List<ChatModel> chatModels;
+    private SortedList<ChatModel> chatModels;
     private String myUid;
     private OnItemClickListner onItemClickListner;
 
@@ -40,7 +41,50 @@ public class ChatRecyclerAdapter extends  RecyclerView.Adapter<ChatRecyclerAdapt
 
     public ChatRecyclerAdapter() {
         myUid = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        chatModels = new ArrayList<>();
+//        chatModels = new ArrayList<>();
+        chatModels = new SortedList<>(ChatModel.class, new SortedList.Callback<ChatModel>() {
+            @Override
+            public int compare(ChatModel o1, ChatModel o2) {
+                return -(o1.getTimestamp().compareTo(o2.getTimestamp()));
+            }
+
+            @Override
+            public void onChanged(int position, int count) {
+                RLog.i("position: " + position + " count: " + count);
+                notifyItemRangeChanged(position, count);
+            }
+
+            @Override
+            public boolean areContentsTheSame(ChatModel oldItem, ChatModel newItem) {
+                RLog.i("oldItem: " + oldItem.getMessage() + " newItem: " + newItem.getMessage());
+                return oldItem.getTimestamp().equals(newItem.getTimestamp());
+            }
+
+            @Override
+            public boolean areItemsTheSame(ChatModel item1, ChatModel item2) {
+                boolean b = item1.getTimestamp().equals(item2.getTimestamp());
+                RLog.i("oldItem: " + item1.getMessage() + " newItem: " + item2.getMessage() + " result: " +b);
+                return b;
+            }
+
+            @Override
+            public void onInserted(int position, int count) {
+                RLog.i("position: " + position + " count: " + count);
+                notifyItemRangeInserted(position, count);
+            }
+
+            @Override
+            public void onRemoved(int position, int count) {
+                RLog.i("position: " + position + " count: " + count);
+                notifyItemRangeRemoved(position, count);
+            }
+
+            @Override
+            public void onMoved(int fromPosition, int toPosition) {
+                RLog.i("fromPosition: " + fromPosition + " toPosition: " + toPosition);
+                notifyItemMoved(fromPosition, toPosition);
+            }
+        });
 
         currentTime = Calendar.getInstance();
         year = currentTime.get(Calendar.YEAR);
@@ -175,15 +219,20 @@ public class ChatRecyclerAdapter extends  RecyclerView.Adapter<ChatRecyclerAdapt
     }
 
     @Override
-    public List<ChatModel> getItems() {
-        return chatModels;
+    public SortedList<ChatModel> getItems() {
+        return  chatModels;
     }
 
     @Override
     public void addItems(boolean isClear, List<ChatModel> models) {
+        chatModels.beginBatchedUpdates();
         if(isClear)
             chatModels.clear();
-        chatModels.addAll(models);
+
+        for(ChatModel chatModel : models){
+            chatModels.add(chatModel);
+        }
+        chatModels.endBatchedUpdates();
     }
 
     @Override
@@ -193,21 +242,25 @@ public class ChatRecyclerAdapter extends  RecyclerView.Adapter<ChatRecyclerAdapt
 
     @Override
     public void addItem(String key, ChatModel chatModel) {
-        chatModels.add(chatModel);
-        positionMap.put(key, chatModels.size()-1);
+//        chatModels.add(chatModel);
+//        positionMap.put(key, chatModels.size()-1);
+        int addedInedx = chatModels.add(chatModel);
+        positionMap.put(key, addedInedx);
+        RLog.i("addedInedx = " + addedInedx);
     }
 
     @Override
     public void updateItem(String key, ChatModel chatModel) {
-        int targetPosition = positionMap.get(key);
-        chatModels.get(targetPosition).setGroup(chatModel.isGroup());
-        chatModels.get(targetPosition).setUid(chatModel.getUid());
-        chatModels.get(targetPosition).setMessage(chatModel.getMessage());
-        chatModels.get(targetPosition).setUsers(chatModel.getUsers());
-        chatModels.get(targetPosition).setType(chatModel.getType());
-        chatModels.get(targetPosition).setTimestamp(chatModel.getTimestamp());
-        chatModels.get(targetPosition).setFileName(chatModel.getFileName());
-        chatModels.get(targetPosition).setFileUrl(chatModel.getFileUrl());
+        int targetPosition = 0;
+        for (int i = 0; i < chatModels.size(); i++) {
+            if(chatModels.get(i).getRoomUid().equals(chatModel.getRoomUid())){
+                targetPosition = i;
+                break;
+            }
+        }
+//        chatModels.add(0, chatModel);
+        chatModels.updateItemAt(targetPosition, chatModel);
+//        chatModels.set(targetPosition, chatModel);
     }
 
     @Override
