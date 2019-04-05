@@ -100,7 +100,7 @@ public class ChatRepository {
                 List<ChatModel> chatModels = new ArrayList<>();
                 for (DataSnapshot item :dataSnapshot.getChildren()){
                     ChatModel chatModel = item.getValue(ChatModel.class);
-                    chatModel.setUid(item.getKey());
+                    chatModel.setUserUid(item.getKey());
                     chatModels.add(chatModel);
                 }
                 Collections.sort(chatModels, new ChatModelSort());

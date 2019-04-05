@@ -10,10 +10,6 @@ public interface MessageContract {
 
     void init(Bundle bundle);
 
-    @Deprecated void init(Intent intent);
-
-    @Deprecated void init(Fragment fragment);
-
     void loadMessagesAndListen();
 
     void onSendButtonClicked(String message);

@@ -1,20 +1,28 @@
 package project.kym.mychat.model;
 
+import com.google.firebase.firestore.IgnoreExtraProperties;
 import com.google.firebase.firestore.ServerTimestamp;
 
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import androidx.annotation.NonNull;
+import androidx.room.Entity;
+import androidx.room.Index;
+import androidx.room.PrimaryKey;
+
 /** 채팅방 모델 */
+@Entity
+//@IgnoreExtraProperties    // 이것과 @Exclude 를 게터에 선언하면 해당 필드는 파스에서 사용하지 않는다.
 public class ChatModel {
-    private String roomUid;  // 채팅방 Uid
+    @PrimaryKey private String roomUid;  // 채팅방 Uid
     private boolean isGroup = false; // 그룹채팅 여부
-    private Map<String, Integer> users = new HashMap<>(); //채팅방의 유저들 <uid, 해당 유저가 읽지 않은 메시지 수>
-    private Map<String, String> lastRead = new HashMap<>(); //채팅방의 유저들 <uid, 해당 유저가 읽은 마지막 메시지>
+    private Map<String, Integer> users = new HashMap<>(); //채팅방의 유저들 <userUid, 해당 유저가 읽지 않은 메시지 수>
+    private Map<String, String> lastRead = new HashMap<>(); //채팅방의 유저들 <userUid, 해당 유저가 읽은 마지막 메시지>
 
     private String title;  //방 이름
-    private String uid;  //작성자
+    private String userUid;  //작성자
     private int type; // 메시지 타입
     private String message;  // 내용
     private String fileName;  // 파일 이름
@@ -62,12 +70,12 @@ public class ChatModel {
         this.title = title;
     }
 
-    public String getUid() {
-        return uid;
+    public String getUserUid() {
+        return userUid;
     }
 
-    public void setUid(String uid) {
-        this.uid = uid;
+    public void setUserUid(String userUid) {
+        this.userUid = userUid;
     }
 
     public int getType() {
@@ -110,8 +118,11 @@ public class ChatModel {
         this.timestamp = timestamp;
     }
 
+    @Entity(primaryKeys = {"roomUid", "uid"}, indices = {@Index(value = {"roomUid", "timestamp"})})
     public static class Comment {
-        private String uid;  //작성자
+        @NonNull private String roomUid;
+        @NonNull private String uid;
+        private String userUid;  //작성자
         private int type; // 메시지 타입
         private String message;  // 내용
         private String fileName;  // 파일 이름
@@ -119,12 +130,28 @@ public class ChatModel {
         @ServerTimestamp
         private Date timestamp;    // 작성시간
 
+        public String getRoomUid() {
+            return roomUid;
+        }
+
+        public void setRoomUid(String roomUid) {
+            this.roomUid = roomUid;
+        }
+
         public String getUid() {
             return uid;
         }
 
         public void setUid(String uid) {
             this.uid = uid;
+        }
+
+        public String getUserUid() {
+            return userUid;
+        }
+
+        public void setUserUid(String userUid) {
+            this.userUid = userUid;
         }
 
         public int getType() {
@@ -170,7 +197,8 @@ public class ChatModel {
         @Override
         public String toString() {
             return "Comment{" +
-                    "uid='" + uid + '\'' +
+                    "roomUid='" + roomUid + '\'' +
+                    ", userUid='" + userUid + '\'' +
                     ", type=" + type +
                     ", message='" + message + '\'' +
                     ", fileName='" + fileName + '\'' +
@@ -186,7 +214,7 @@ public class ChatModel {
                 "roomUid='" + roomUid + '\'' +
                 ", isGroup=" + isGroup +
                 ", users=" + users +
-                ", uid='" + uid + '\'' +
+                ", userUid='" + userUid + '\'' +
                 ", type=" + type +
                 ", message='" + message + '\'' +
                 ", fileName='" + fileName + '\'' +

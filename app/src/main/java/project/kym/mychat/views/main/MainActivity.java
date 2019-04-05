@@ -10,6 +10,8 @@ import android.view.View;
 import com.google.firebase.auth.FirebaseAuth;
 
 import project.kym.mychat.R;
+import project.kym.mychat.database.AppDatabase;
+import project.kym.mychat.repository.MessageRepository;
 import project.kym.mychat.repository.MyAccount;
 import project.kym.mychat.views.BaseActivity;
 import project.kym.mychat.views.LoginActivity;
@@ -30,6 +32,10 @@ public class MainActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        AppDatabase.getInstance(getApplicationContext());
+        MessageRepository.getInstance().clear();
+
         BottomNavigationView bottomNavigationView = (BottomNavigationView) findViewById(R.id.mainactivity_bottomnavigationview);
 
         peopleFragment = new PeopleFragment();

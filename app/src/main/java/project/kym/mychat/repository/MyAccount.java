@@ -34,7 +34,7 @@ public class MyAccount {
         if(user != null){
             loadUserInfo(user.getUid(), listener);
         } else {
-            RLog.e("FirebaseAuth.getInstance().getCurrentUser().getUid()  is  null !!!");
+            RLog.e("FirebaseAuth.getInstance().getCurrentUser().getUserUid()  is  null !!!");
             listener.onComplete(false, null);
         }
 

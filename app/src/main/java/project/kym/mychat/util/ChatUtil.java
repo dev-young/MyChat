@@ -8,14 +8,12 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
 import com.google.firebase.firestore.WriteBatch;
 
 
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
 
 import project.kym.mychat.model.ChatModel;
@@ -53,7 +51,7 @@ public class ChatUtil {
 
                 Map<String, Integer> users = (Map<String, Integer>) document.get("users");
                 for( String key : users.keySet() ){
-                    if (!comment.getUid().equals(key)) users.put(key, users.get(key)+1);
+                    if (!comment.getUserUid().equals(key)) users.put(key, users.get(key)+1);
                 }
                 document.getReference().update("users", users);
 
@@ -95,14 +93,14 @@ public class ChatUtil {
                 if (task.isSuccessful()) {
                     Map<String, Integer> users = chatModel.getUsers();
                     for( String key : users.keySet() ){
-                        if (!comment.getUid().equals(key))
+                        if (!comment.getUserUid().equals(key))
                             users.put(key, users.get(key)+1);   // 안읽은 메시지 카운팅
                     }
                     WriteBatch batch = firestore.batch();
 //                    comment.setTimestamp(new Date());
                     batch.set(reference, comment, SetOptions.merge());
                     batch.update(reference, "users", users);
-                    batch.update(reference, "lastRead."+comment.getUid(), addedUid);
+                    batch.update(reference, "lastRead."+comment.getUserUid(), addedUid);
                     batch.commit()
                             .addOnSuccessListener(new OnSuccessListener<Void>() {
                                 @Override
@@ -134,10 +132,10 @@ public class ChatUtil {
                 }
 
                 if (task.isSuccessful()) {
-                    RLog.i("updateLastRead 성공");
+                    RLog.d("updateLastRead 성공");
                     listener.onCompelete(true, null);
                 }  else {
-                    RLog.i("updateLastRead 실패");
+                    RLog.d("updateLastRead 실패");
                     listener.onCompelete(false, null);
                 }
 

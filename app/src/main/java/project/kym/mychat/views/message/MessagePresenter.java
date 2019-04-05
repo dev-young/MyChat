@@ -1,6 +1,5 @@
 package project.kym.mychat.views.message;
 
-import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -16,9 +15,13 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-import androidx.fragment.app.Fragment;
+import io.reactivex.Observable;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.functions.Consumer;
+import project.kym.mychat.SimpleCallback;
 import project.kym.mychat.model.ChatModel;
 import project.kym.mychat.model.UserModel;
 import project.kym.mychat.repository.MessageRepository;
@@ -97,136 +100,91 @@ public class MessagePresenter implements MessageContract{
     }
 
     @Override
-    public void init(Intent intent) {
-        //채팅을 요구 하는 아아디 즉 단말기에 로그인된 UID
-        MyAccount.getInstance().getUserModel(new MyAccount.OnCompleteListener() {
-            @Override
-            public void onComplete(boolean isSuccess, UserModel userModel) {
-                if(isSuccess){
-                    myUid = userModel.getUid();
-                    // 그룹 채팅방 여부
-                    isGroupMessage = intent.getBooleanExtra("isGroupMessage", false);
-                    // 유저들을 선택하여 새로 채팅방을 만들려고 시도할 경우 값이 넘어온다.
-                    roomUsers = (Map<String, Integer>) intent.getSerializableExtra("destinationUids");
-                    // 채팅방 uid
-                    chatRoomUid = intent.getStringExtra("chatRoomUid");
-                    //채팅방 이름
-                    title = intent.getStringExtra("title");
-
-                    if(chatRoomUid == null && !isGroupMessage){
-                        // 유저 목록에서 유저를 선택한 경우
-                        findChatRoom(roomUsers.keySet().iterator().next());
-
-                    } else if(chatRoomUid != null){
-                        // 채팅방을 클릭해 들어온 경우
-                        RLog.d("채팅방을 클릭해 들어온 경우");
-                        view.showProgress(true);
-//            getUsersAndLoadMessagesFromRealTimeDB(chatRoomUid);
-                        getUsersAndLoadMessages(chatRoomUid);
-                    } else{
-                        RLog.d("그룹챗을 새로 만들어 들어온 경우");
-                        // 그룹챗을 새로 만들어 들어온 경우, send 버튼을 클릭할 때 방을 생성하고 어뎁터를 만들고 데이터를 불러온다.
-                    }
-                } else {
-                    RLog.e("채팅방 초기화중 에러 발생");
-                }
-            }
-        });
-    }
-
-    @Override
-    public void init(Fragment fragment) {
-        //채팅을 요구 하는 아아디 즉 단말기에 로그인된 UID
-        MyAccount.getInstance().getUserModel(new MyAccount.OnCompleteListener() {
-            @Override
-            public void onComplete(boolean isSuccess, UserModel userModel) {
-                if(isSuccess){
-                    myUid = userModel.getUid();
-                    // 그룹 채팅방 여부
-                    isGroupMessage = fragment.getArguments().getBoolean("isGroupMessage", false);
-                    // 유저들을 선택하여 새로 채팅방을 만들려고 시도할 경우 값이 넘어온다.
-                    roomUsers = (Map<String, Integer>) fragment.getArguments().getSerializable("destinationUids");
-                    // 채팅방 uid
-                    chatRoomUid = fragment.getArguments().getString("chatRoomUid");
-                    //채팅방 이름
-                    title = fragment.getArguments().getString("title");
-
-                    if(chatRoomUid == null && !isGroupMessage){
-                        // 유저 목록에서 유저를 선택한 경우
-                        findChatRoom(roomUsers.keySet().iterator().next());
-
-                    } else if(chatRoomUid != null){
-                        // 채팅방을 클릭해 들어온 경우
-                        RLog.d("채팅방을 클릭해 들어온 경우");
-                        view.showProgress(true);
-                        getUsersAndLoadMessages(chatRoomUid);
-                    } else{
-                        // 그룹챗을 새로 만들어 들어온 경우, send 버튼을 클릭할 때 방을 생성하고 어뎁터를 만들고 데이터를 불러온다.
-                    }
-                }
-            }
-        });
-    }
-
-    @Override
     public void loadMessagesAndListen() {
-        MessageRepository.getInstance().startListen(chatRoomUid, new MessageRepository.OnEventListener<ChatModel.Comment>() {
+        MessageRepository.getInstance().loadFromDB(chatRoomUid, new SimpleCallback<List<ChatModel.Comment>>() {
             @Override
-            public void onAdded(String key, ChatModel.Comment comment_origin) {
-                //이전에 들어온 값과 날짜가 다를 경우 새로 들어온 날짜를 표시하는 데이터를 추가한다.
-                currentAddedDate = comment_origin.getTimestamp();
-                String addedDate = simpleDateFormat.format(currentAddedDate);
-                if(!lastAddedDate.equals(addedDate)){
-                    ChatModel.Comment comment = new ChatModel.Comment();
-                    comment.setTimestamp(comment_origin.getTimestamp());
-                    lastAddedDate = addedDate;
-                    adapterModel.addItem(comment);
-                }
-
-                adapterModel.addItem(key, comment_origin);
-
-                adapterView.notifyItemInserted();
-//                adapterView.notifyAdapter();  // 이걸 하면 Inserted 애니메이션이 사라진다.
-                adapterView.notifyItemUpdated(adapterModel.getItemsCount()-2);
-
-                // 채팅방에 들어온 시점의 시간과 같거나 그 이후 추가된 comment 이면 서버의 lastRead를 업데이트한다.
-                if(isLastMessage((comment_origin))){
-                    if(comment_origin.getUid().equals(myUid)){
-                        // 내가 새로 작성한 메시지일 경우 스크롤을 아래로 내린다.
-                        view.scrollToLastPosition(true);
-                    } else {
-                        // 상대방이 새로 작성한 메시지일 경우 스크롤 위치에 따라 스크롤을 아래로 내린다.
-                        view.scrollToLastPosition(false);
-                        RLog.d("서버에 lastRead 업데이트 시작! ");
-                        resetUnreadMessageCounter();
-                        ChatUtil.updateLastRead(chatRoomUid, myUid, key, new FriestoreListener.Complete<Void>() {
-                            @Override
-                            public void onCompelete(boolean isSuccess, Void result) {}
-                        });
+            public void onComplete(List<ChatModel.Comment> result) {
+                Date date = null;
+                if(result != null && !result.isEmpty()){
+                    date = result.get(result.size()-1).getTimestamp();
+                    for(ChatModel.Comment c : result){
+                        adapterModel.addItem(c.getUid(), c);
                     }
-                } else {
-                    view.scrollToLastPosition(true);
-                }
-            }
+                    lastAddedDate = simpleDateFormat.format(date);
+                    Observable.just("").subscribeOn(AndroidSchedulers.mainThread()).subscribe(new Consumer<String>() {
+                        @Override
+                        public void accept(String s) throws Exception {
+                            adapterView.notifyAdapter();
+                            view.scrollToLastPosition(true);
+                            view.showProgress(false);
+                        }
+                    });
+                } else
+                    RLog.e("date = null;");
 
-            @Override
-            public void onChanged(String key, ChatModel.Comment comment) {
-                adapterModel.updateItem(key, comment);
+                MessageRepository.getInstance().startListen(chatRoomUid, date, new MessageRepository.OnEventListener<ChatModel.Comment>() {
+                    @Override
+                    public void onAdded(String key, ChatModel.Comment comment_origin) {
+                        //이전에 들어온 값과 날짜가 다를 경우 새로 들어온 날짜를 표시하는 데이터를 추가한다.
+                        currentAddedDate = comment_origin.getTimestamp();
+                        String addedDate = simpleDateFormat.format(currentAddedDate);
+                        if(!lastAddedDate.equals(addedDate)){
+                            ChatModel.Comment comment = new ChatModel.Comment();
+                            comment.setTimestamp(new Date(comment_origin.getTimestamp().getTime()-1));
+                            comment.setRoomUid(chatRoomUid);
+                            comment.setUid("date_item_" + currentAddedDate.getTime());
+                            lastAddedDate = addedDate;
+                            adapterModel.addItem(comment);
+                            MessageRepository.getInstance().insert(comment);
+                        }
+
+                        adapterModel.addItem(key, comment_origin);
+
+                        adapterView.notifyItemInserted();
+//                        adapterView.notifyAdapter();  // 이걸 하면 Inserted 애니메이션이 사라진다.
+                        adapterView.notifyItemUpdated(adapterModel.getItemsCount()-2);
+
+                        // 채팅방에 들어온 시점의 시간과 같거나 그 이후 추가된 comment 이면 서버의 lastRead를 업데이트한다.
+                        if(isLastMessage((comment_origin))){
+                            if(comment_origin.getUserUid().equals(myUid)){
+                                // 내가 새로 작성한 메시지일 경우 스크롤을 아래로 내린다.
+                                view.scrollToLastPosition(true);
+                            } else {
+                                // 상대방이 새로 작성한 메시지일 경우 스크롤 위치에 따라 스크롤을 아래로 내린다.
+                                view.scrollToLastPosition(false);
+                                RLog.d("서버에 lastRead 업데이트 시작! ");
+                                resetUnreadMessageCounter();
+                                ChatUtil.updateLastRead(chatRoomUid, myUid, key, new FriestoreListener.Complete<Void>() {
+                                    @Override
+                                    public void onCompelete(boolean isSuccess, Void result) {}
+                                });
+                            }
+                        } else {
+                            view.scrollToLastPosition(true);
+                        }
+                    }
+
+                    @Override
+                    public void onChanged(String key, ChatModel.Comment comment) {
+                        adapterModel.updateItem(key, comment);
+                    }
+                });
+
+                MessageRepository.getInstance().startListenLastRead(chatRoomUid, new MessageRepository.OnEventListener<Map<String, String>>() {
+                    @Override
+                    public void onAdded(String key, Map<String, String> lastRead) {
+
+                    }
+
+                    @Override
+                    public void onChanged(String key, Map<String, String> lastRead) {
+                        RLog.d(lastRead.toString());
+                        adapterModel.updateReadUsers(lastRead);
+                    }
+                });
             }
         });
 
-        MessageRepository.getInstance().startListenLastRead(chatRoomUid, new MessageRepository.OnEventListener<Map<String, String>>() {
-            @Override
-            public void onAdded(String key, Map<String, String> lastRead) {
-
-            }
-
-            @Override
-            public void onChanged(String key, Map<String, String> lastRead) {
-                RLog.i(lastRead.toString());
-                adapterModel.updateReadUsers(lastRead);
-            }
-        });
     }
 
     private void resetUnreadMessageCounter() {
@@ -348,7 +306,7 @@ public class MessagePresenter implements MessageContract{
 
     private ChatModel.Comment makeComment(String message){
         ChatModel.Comment comment = new ChatModel.Comment();
-        comment.setUid(myUid);
+        comment.setUserUid(myUid);
         comment.setMessage(message);
 //        comment.setTimestamp(new Date());
         return comment;

@@ -30,7 +30,7 @@ public class MessageRecyclerViewAdapter extends RecyclerView.Adapter<MessageRecy
     List<ChatModel.Comment> comments = new ArrayList<>();
     Map<String, Integer> commentMap = new HashMap<>();    //리스트의 인덱스와 키값을 맵으로 저장 <Comment의 키값, 리스트에서 Comment의 인덱스>
     Map<String, UserModel> users;
-    Map<String, String> lastRead;
+    Map<String, String> lastRead = new HashMap<>();
     String chatRoomUid;
     String myUid;
 
@@ -67,7 +67,7 @@ public class MessageRecyclerViewAdapter extends RecyclerView.Adapter<MessageRecy
     public void onBindViewHolder(MessageViewHodler viewHolder, int position) {
         int itemType = getItemViewType(position);
         ChatModel.Comment comment = comments.get(position);
-        String uid = comment.getUid();
+        String uid = comment.getUserUid();
         UserModel userModel = users.get(uid);
 //        int count = peopleCount - comment.getReadUsers().size();
         int count = getUnReadUserCount(position);
@@ -84,12 +84,12 @@ public class MessageRecyclerViewAdapter extends RecyclerView.Adapter<MessageRecy
 
         if(position > 0){
             // 첫번째 아이템이 아닌경우
-            beforeUid = comments.get(position-1).getUid();
+            beforeUid = comments.get(position-1).getUserUid();
             beforeTime = getTime(comments.get(position-1).getTimestamp());
         }
         if(position+1 < comments.size()){
             // 다음 아이템이 있는 경우
-            nextUid = comments.get(position+1).getUid();
+            nextUid = comments.get(position+1).getUserUid();
             nextTime = getTime(comments.get(position+1).getTimestamp());
         }
 
@@ -103,7 +103,7 @@ public class MessageRecyclerViewAdapter extends RecyclerView.Adapter<MessageRecy
         }
 
         // 모든 아이템에 시간을 표시하지 않고 카톡처럼 연속된 시간의 마지막 아이템에만 시간을 표시하기 위한 조건문
-        if(time.equals(nextTime) && comment.getUid().equals(nextUid)){
+        if(time.equals(nextTime) && comment.getUserUid().equals(nextUid)){
             // 다음 아이템과 표시 시간과 작성자가 같은 경우 시간을 표시하지 않는다.
             time = "";
         }
@@ -149,7 +149,7 @@ public class MessageRecyclerViewAdapter extends RecyclerView.Adapter<MessageRecy
     public int getItemViewType(int position) {
 //        RLog.d("position: " + position);
         ChatModel.Comment comment = comments.get(position);
-        String uid = comment.getUid();
+        String uid = comment.getUserUid();
         UserModel userModel = users.get(uid);
 //        RLog.e(users.toString());
 //        RLog.e(uid);
@@ -235,7 +235,7 @@ public class MessageRecyclerViewAdapter extends RecyclerView.Adapter<MessageRecy
         int targetPosition = commentMap.get(key);
         comments.set(targetPosition, c);
 //        notifyItemChanged(targetPosition);
-        notifyDataSetChanged();
+//        notifyDataSetChanged();
         return targetPosition;
     }
 
@@ -251,10 +251,13 @@ public class MessageRecyclerViewAdapter extends RecyclerView.Adapter<MessageRecy
         return targetPosition;
     }
 
+    // TODO: 2019-04-05 상대방의 채팅이 추가된 경우 서버로 부터 읽어오는 속도가 늦어서 애니메이션 효과가 짤린다  딜레이를 주면 해결될 것 같다
     @Override
     public void updateReadUsers(Map<String, String> lastRead) {
-        this.lastRead = lastRead;
-        notifyDataSetChanged();
+        if(!lastRead.values().toString().equals(this.lastRead.values().toString())){
+            this.lastRead = lastRead;
+            notifyDataSetChanged();
+        }
     }
 
     static class MessageViewHodler extends RecyclerView.ViewHolder {
