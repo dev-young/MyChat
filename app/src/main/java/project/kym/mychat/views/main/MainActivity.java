@@ -34,7 +34,7 @@ public class MainActivity extends BaseActivity {
         setContentView(R.layout.activity_main);
 
         AppDatabase.getInstance(getApplicationContext());
-        MessageRepository.getInstance().clear();
+//        MessageRepository.getInstance().clear();
 
         BottomNavigationView bottomNavigationView = (BottomNavigationView) findViewById(R.id.mainactivity_bottomnavigationview);
 

@@ -192,7 +192,7 @@ public class MessageRecyclerViewAdapter extends RecyclerView.Adapter<MessageRecy
 
     @Override
     public void notifyItemUpdated(int position) {
-        this.notifyItemChanged(position);
+        this.notifyItemChanged(position, 0);
     }
 
     @Override
@@ -251,7 +251,7 @@ public class MessageRecyclerViewAdapter extends RecyclerView.Adapter<MessageRecy
         return targetPosition;
     }
 
-    // TODO: 2019-04-05 상대방의 채팅이 추가된 경우 서버로 부터 읽어오는 속도가 늦어서 애니메이션 효과가 짤린다  딜레이를 주면 해결될 것 같다
+    // TODO: 2019-04-05 상대방의 채팅이 추가된 경우 서버로 부터 읽어오는 속도가 늦어서 애니메이션 효과가 짤린다  딜레이를 주면 해결될 것 같다 아니면..그냥 added 애니메이션을 없이하면.. 카톡처럼ㅎㅎ
     @Override
     public void updateReadUsers(Map<String, String> lastRead) {
         if(!lastRead.values().toString().equals(this.lastRead.values().toString())){
