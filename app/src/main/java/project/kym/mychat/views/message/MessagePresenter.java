@@ -1,9 +1,20 @@
 package project.kym.mychat.views.message;
 
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.DataSource;
+import com.bumptech.glide.load.engine.GlideException;
+import com.bumptech.glide.request.FutureTarget;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.RequestOptions;
+import com.bumptech.glide.request.target.Target;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -11,12 +22,14 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -26,8 +39,10 @@ import project.kym.mychat.model.ChatModel;
 import project.kym.mychat.model.UserModel;
 import project.kym.mychat.repository.MessageRepository;
 import project.kym.mychat.repository.MyAccount;
+import project.kym.mychat.util.BitmapUtil;
 import project.kym.mychat.util.ChatUtil;
-import project.kym.mychat.util.FriestoreListener;
+import project.kym.mychat.util.FileUtil;
+import project.kym.mychat.util.FirebaseListener;
 import project.kym.mychat.util.PushUtil;
 import project.kym.mychat.util.RLog;
 
@@ -114,7 +129,7 @@ public class MessagePresenter implements MessageContract{
                     Observable.just("").subscribeOn(AndroidSchedulers.mainThread()).subscribe(new Consumer<String>() {
                         @Override
                         public void accept(String s) throws Exception {
-                            adapterView.notifyAdapter();
+//                            adapterView.notifyAdapter();
                             view.scrollToLastPosition(true);
                             view.showProgress(false);
                         }
@@ -140,8 +155,8 @@ public class MessagePresenter implements MessageContract{
 
                         adapterModel.addItem(key, comment_origin);
 
-                        adapterView.notifyItemInserted();
-//                        adapterView.notifyAdapter();  // 이걸 하면 Inserted 애니메이션이 사라진다.
+//                        adapterView.notifyItemInserted();
+                        adapterView.notifyAdapter();  // 이걸 하면 Inserted 애니메이션이 사라진다.
                         adapterView.notifyItemUpdated(adapterModel.getItemsCount()-2);
 
                         // 채팅방에 들어온 시점의 시간과 같거나 그 이후 추가된 comment 이면 서버의 lastRead를 업데이트한다.
@@ -154,7 +169,7 @@ public class MessagePresenter implements MessageContract{
                                 view.scrollToLastPosition(false);
                                 RLog.d("서버에 lastRead 업데이트 시작! ");
                                 resetUnreadMessageCounter();
-                                ChatUtil.updateLastRead(chatRoomUid, myUid, key, new FriestoreListener.Complete<Void>() {
+                                ChatUtil.updateLastRead(chatRoomUid, myUid, key, new FirebaseListener.Complete<Void>() {
                                     @Override
                                     public void onCompelete(boolean isSuccess, Void result) {}
                                 });
@@ -166,6 +181,7 @@ public class MessagePresenter implements MessageContract{
 
                     @Override
                     public void onChanged(String key, ChatModel.Comment comment) {
+                        MessageRepository.getInstance().update(comment);
                         adapterModel.updateItem(key, comment);
                     }
                 });
@@ -229,13 +245,57 @@ public class MessagePresenter implements MessageContract{
     public void sendMessage(String chatRoomUid, final ChatModel.Comment comment) {
         RLog.d("chatRoomUid = " + chatRoomUid);
         ChatModel chatModel = MessageRepository.getInstance().getCurrentChat();
-        ChatUtil.sendMessage(chatModel, comment, new ChatUtil.SendMessageListener() {
+        ChatUtil.sendMessage(chatModel, comment, new FirebaseListener.UploadCompleteListener<ChatModel.Comment>() {
             @Override
-            public void onSuccess() {
-//                updateLastTimestamp();
+            public void onComplete(boolean isSuccess, ChatModel.Comment result) {
+                if(isSuccess){
+                    MessageRepository.getInstance().update(result.getUid(), result.getLocalFilePath());
+                }
             }
         });
         sendPush(comment);
+    }
+
+    @Override
+    public void onPhotoSelected(Context context, List<Uri> uris) {
+        RLog.i(uris.toString());
+        if(uris.isEmpty()){
+            return;
+        }
+
+        for(Uri uri : uris){
+            String fileName = myUid + "_" + new Date().getTime();
+            ChatModel.Comment comment = makeComment("photo");
+            comment.setFileName(fileName);
+            comment.setLocalFilePath(FileUtil.getPath(context, uri));
+            comment.setType(ChatModel.Comment.TYPE_PHOTO);
+
+            Glide.with(context).asBitmap().load(uri).apply(new RequestOptions().override(1440).centerInside()).addListener(new RequestListener<Bitmap>() {
+                @Override
+                public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Bitmap> target, boolean isFirstResource) {
+                    return false;
+                }
+
+                @Override
+                public boolean onResourceReady(Bitmap resource, Object model, Target<Bitmap> target, DataSource dataSource, boolean isFirstResource) {
+                    Map<String, Bitmap> fileDatas = new HashMap<>();
+                    fileDatas.put(fileName, resource);
+                    ChatUtil.uploadPhotos(myUid, fileDatas, new FirebaseListener.UploadCompleteListener<Map<String, String>>() {
+                        @Override
+                        public void onComplete(boolean isSuccess, Map<String, String> result) {
+                            if(isSuccess){
+                                for(String fileUrl : result.values()){
+                                    comment.setFileUrl(fileUrl);
+                                    sendMessage(chatRoomUid, comment);
+                                }
+
+                            }
+                        }
+                    });
+                    return false;
+                }
+            }).submit();
+        }
     }
 
     /** Comment 푸시알림으로 전송 */

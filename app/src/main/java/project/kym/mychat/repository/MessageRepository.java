@@ -73,6 +73,28 @@ public class MessageRepository {
         });
     }
 
+    public void update(ChatModel.Comment comment){
+        Observable.just(comment).subscribeOn(Schedulers.io()).subscribe(new Consumer<ChatModel.Comment>() {
+            @Override
+            public void accept(ChatModel.Comment c) throws Exception {
+                int rowId = messageDao.update(c.getUid(), c.getTimestamp().getTime());
+//                long rowId = messageDao.update(c);
+                RLog.i("insert" + rowId);
+            }
+        });
+    }
+
+    public void update(String commentUid, String localFilePath){
+        Observable.just(commentUid).subscribeOn(Schedulers.io()).subscribe(new Consumer<String>() {
+            @Override
+            public void accept(String s) throws Exception {
+                int rowId = messageDao.update(s, localFilePath);
+//                long rowId = messageDao.update(c);
+                RLog.i("insert" + rowId);
+            }
+        });
+    }
+
     public void insert(List<ChatModel.Comment> comments){
         RLog.i();
         Observable.just(comments).subscribeOn(Schedulers.io()).subscribe(new Consumer<List<ChatModel.Comment>>() {
@@ -124,9 +146,16 @@ public class MessageRepository {
                             String source = change.getDocument() != null && change.getDocument().getMetadata().hasPendingWrites()? "Local" : "Server";
                             RLog.d(source + " 데이터 추가! " + comment_origin.toString() + comment_origin.getTimestamp().getTime());
 
-                            commentMap.put(key, comment_origin);
-                            commentList.add(comment_origin);
+                            if(commentMap.containsKey(key)){
+                                ChatModel.Comment before = commentMap.get(key);
+                                before.update(comment_origin);
+                                comment_origin = before;
+                            } else {
+                                commentMap.put(key, comment_origin);
+                            }
                             newComments.add(comment_origin);
+                            commentList.add(comment_origin);
+
                             onEventListener.onAdded(key, comment_origin);
 
                             if(comment_origin.getTimestamp() == null){
@@ -134,13 +163,11 @@ public class MessageRepository {
                             }
 
 
-
                             break;
                         case MODIFIED:
                             String source2 = change.getDocument() != null && change.getDocument().getMetadata().hasPendingWrites()? "Local" : "Server";
                             RLog.d(source2 + " 데이터 변경! " + comment_origin.toString() + comment_origin.getTimestamp().getTime());
                             commentMap.put(key, comment_origin);
-                            insert(comment_origin);
 //                            RLog.d(comment_origin.readUsers.toString());
                             onEventListener.onChanged(key, comment_origin);
                             break;
@@ -150,9 +177,8 @@ public class MessageRepository {
                             break;
                     }
                 }
-                insert(newComments);
                 RLog.d("반복 횟수: " + queryDocumentSnapshots.getDocumentChanges().size());
-
+                insert(newComments);
             }
         });
     }
@@ -197,7 +223,6 @@ public class MessageRepository {
             lastReadLR = null;
         }
     }
-
 
 
     public interface OnEventListener<T>{

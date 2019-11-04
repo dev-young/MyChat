@@ -5,4 +5,9 @@
     <string name="default_notification_channel_id" translatable="false">fcm_default_channel</string>
     <string name="send">전송</string>
     <string name="no_chat_list">채팅 기록이 없습니다.</string>
+
+
+    <string name="permission_denied_explanation">거부하시면 이용에 제한이 됩니다.\n하지만 [설정] > [권한] 에서 권한을 허용할 수 있습니다.</string>
+    <string name="permission_rationale_storage">해당 기능을 사용하기 위해서는 저장소 접근 권한이 필요합니다.</string>
+    <string name="select_photo">사진을 선택해 주세요.</string>
 </resources>

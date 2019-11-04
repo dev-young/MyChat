@@ -1,5 +1,8 @@
 package project.kym.mychat.model;
 
+import android.net.Uri;
+
+import com.google.firebase.firestore.Exclude;
 import com.google.firebase.firestore.IgnoreExtraProperties;
 import com.google.firebase.firestore.ServerTimestamp;
 
@@ -120,6 +123,10 @@ public class ChatModel {
 
     @Entity(primaryKeys = {"roomUid", "uid"}, indices = {@Index(value = {"roomUid", "timestamp"})})
     public static class Comment {
+        public static final int TYPE_TEXT = 0;
+        public static final int TYPE_PHOTO = 1;
+        public static final int TYPE_FILE = 2;
+
         @NonNull private String roomUid;
         @NonNull private String uid;
         private String userUid;  //작성자
@@ -127,6 +134,7 @@ public class ChatModel {
         private String message;  // 내용
         private String fileName;  // 파일 이름
         private String fileUrl;  // 파일 경로
+        private String localFilePath;  // 파일 경로 (로컬)
         @ServerTimestamp
         private Date timestamp;    // 작성시간
 
@@ -194,6 +202,14 @@ public class ChatModel {
             this.timestamp = timestamp;
         }
 
+        public String getLocalFilePath() {
+            return localFilePath;
+        }
+
+        public void setLocalFilePath(String localFilePath) {
+            this.localFilePath = localFilePath;
+        }
+
         @Override
         public String toString() {
             return "Comment{" +
@@ -205,6 +221,10 @@ public class ChatModel {
                     ", fileUrl='" + fileUrl + '\'' +
                     ", timestamp=" + timestamp +
                     '}';
+        }
+
+        public void update(Comment newModel) {
+            this.timestamp = newModel.timestamp;
         }
     }
 

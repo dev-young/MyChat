@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout>
+<layout xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
     <FrameLayout
         xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
@@ -26,55 +27,102 @@
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/reclclerview"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_height="0dp"
                 android:foregroundGravity="bottom"
                 android:layout_weight="1"/>
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@android:color/white">
+                android:orientation="vertical"
+                >
 
-                <EditText
-                    android:id="@+id/submitText"
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:maxLines="4"/>
+                    android:background="@android:color/white">
 
-
-
-                <FrameLayout
-                    android:layout_width="60sp"
-                    android:layout_height="match_parent"
-                    android:layout_margin="5dp"
-                    android:background="@color/colorAccent">
-
-                    <TextView
-                        android:id="@+id/submitbutton"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:textStyle="bold"
+                    <ImageView
+                        android:id="@+id/addBtn"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_gravity="center"
+                        android:padding="0dp"
+                        android:src="@drawable/ic_add_black_24dp"
                         android:background="?attr/selectableItemBackground"
-                        android:text="@string/send"/>
+                        />
 
-                    <TextView
-                        android:id="@+id/inActivateSubmitButton"
-                        android:layout_width="match_parent"
+                    <EditText
+                        android:id="@+id/submitText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:maxLines="4"/>
+
+
+
+                    <FrameLayout
+                        android:layout_width="60sp"
                         android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:textStyle="bold"
-                        android:background="@color/colorAccent"
-                        android:clickable="true"
-                        android:textColor="@android:color/darker_gray"
-                        android:text="@string/send"/>
+                        android:layout_margin="5dp"
+                        android:background="@color/colorAccent">
 
-                </FrameLayout>
+                        <TextView
+                            android:id="@+id/submitbutton"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:gravity="center"
+                            android:textStyle="bold"
+                            android:background="?attr/selectableItemBackground"
+                            android:text="@string/send"/>
+
+                        <TextView
+                            android:id="@+id/inActivateSubmitButton"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:gravity="center"
+                            android:textStyle="bold"
+                            android:background="@color/colorAccent"
+                            android:clickable="true"
+                            android:textColor="@android:color/darker_gray"
+                            android:text="@string/send"/>
+
+                    </FrameLayout>
 
 
+
+                </LinearLayout>
+
+                <HorizontalScrollView
+                    android:id="@+id/chatAdditionLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone"
+                    tools:visibility="visible"
+                    >
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="5dp">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/addPhoto"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:minWidth="0dp"
+                            android:padding="5dp"
+                            app:icon="@drawable/ic_add_to_photos_black_24dp"
+                            android:text="사진"
+                            />
+
+                    </LinearLayout>
+
+                </HorizontalScrollView>
 
             </LinearLayout>
+
+
         </LinearLayout>
 
         <ProgressBar

@@ -2,11 +2,18 @@
 
 import androidx.databinding.DataBindingUtil;
 import androidx.recyclerview.widget.RecyclerView;
+
+import android.net.Uri;
+import android.os.Build;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
+
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -111,11 +118,11 @@ public class MessageRecyclerViewAdapter extends RecyclerView.Adapter<MessageRecy
 
         switch (getItemViewType(position)){
             case TYPE_MESSAGE_LEFT:
-                ((LeftTextMessageViewHolder)viewHolder).setData(userModel, comment.getMessage(), time, count);
+                ((LeftTextMessageViewHolder)viewHolder).setData(userModel, comment, time, count);
                 break;
 
             case TYPE_MESSAGE_RIGHT:
-                ((RightTextMessageViewHolder)viewHolder).setData(comment.getMessage(), time, count);
+                ((RightTextMessageViewHolder)viewHolder).setData(comment, time, count);
                 break;
 
             default:
@@ -127,9 +134,12 @@ public class MessageRecyclerViewAdapter extends RecyclerView.Adapter<MessageRecy
         int count = 0;
         // 안읽은 사람을 카운트하는 방식
         if(lastRead != null){
-            for(String key : lastRead.values()){
-                if(commentMap.get(key) == null || commentMap.get(key) < position)
-                    count++;
+            for(String userUid : lastRead.keySet()){
+                if(!userUid.equals(myUid)){
+                    String commentUid = lastRead.get(userUid);
+                    if(commentMap.get(commentUid) == null || commentMap.get(commentUid) < position)
+                        count++;
+                }
             }
         }
 
@@ -276,11 +286,21 @@ public class MessageRecyclerViewAdapter extends RecyclerView.Adapter<MessageRecy
             this.binding = binding;
         }
 
-        public void setData(UserModel userModel, String message, String time, int readUserCount){
+        public void setData(UserModel userModel, ChatModel.Comment comment, String time, int readUserCount){
 
             // 메시지 표시
-            binding.textMessage.setText(message);
-//            binding.textMessage.setBackgroundResource(R.drawable.leftbubble);
+            if(comment.getType() == ChatModel.Comment.TYPE_TEXT){
+                binding.textMessage.setVisibility(View.VISIBLE);
+                binding.photo.setVisibility(View.GONE);
+                binding.textMessage.setText(comment.getMessage());
+//            binding.textMessage.setBackgroundResource(R.drawable.rightbubble);
+            } else if(comment.getType() == ChatModel.Comment.TYPE_PHOTO){
+                binding.textMessage.setVisibility(View.GONE);
+                binding.photo.setVisibility(View.VISIBLE);
+                Object url = comment.getFileUrl();
+                Glide.with(binding.photo.getContext()).load(url).into(binding.photo);
+
+            }
 
             // 메시지 보낸 시간 표시
             if(time.isEmpty())
@@ -319,11 +339,26 @@ public class MessageRecyclerViewAdapter extends RecyclerView.Adapter<MessageRecy
             this.binding = binding;
         }
 
-        public void setData(String message, String time, int readUserCount){
+        public void setData(ChatModel.Comment comment, String time, int readUserCount){
 
             // 메시지
-            binding.textMessage.setText(message);
+            if(comment.getType() == ChatModel.Comment.TYPE_TEXT){
+                binding.textMessage.setVisibility(View.VISIBLE);
+                binding.photo.setVisibility(View.GONE);
+                binding.textMessage.setText(comment.getMessage());
 //            binding.textMessage.setBackgroundResource(R.drawable.rightbubble);
+            } else if(comment.getType() == ChatModel.Comment.TYPE_PHOTO){
+                binding.textMessage.setVisibility(View.GONE);
+                binding.photo.setVisibility(View.VISIBLE);
+                String filePath = comment.getLocalFilePath();
+                Object url;
+                if(filePath != null)
+                    url = Uri.fromFile(new File(filePath));
+                else
+                    url = comment.getFileUrl();
+                Glide.with(binding.photo.getContext()).load(url).into(binding.photo);
+            }
+
 
             // 메시지 보낸 시간 표시
             if(time.isEmpty())

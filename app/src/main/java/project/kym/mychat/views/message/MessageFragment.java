@@ -2,7 +2,10 @@ package project.kym.mychat.views.message;
 
 
 import android.app.NotificationManager;
+import android.content.ClipData;
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -12,6 +15,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.view.inputmethod.InputMethodManager;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -19,14 +23,23 @@ import androidx.databinding.DataBindingUtil;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.gun0912.tedpermission.PermissionListener;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import project.kym.mychat.R;
 import project.kym.mychat.databinding.FragmentMessageBinding;
+import project.kym.mychat.util.PermissionUtil;
 import project.kym.mychat.util.RLog;
 import project.kym.mychat.views.OnShowKeyboardListener;
-import project.kym.mychat.views.main.MainActivity;
+
+import static android.app.Activity.RESULT_OK;
+import static android.content.Context.INPUT_METHOD_SERVICE;
 
 public class MessageFragment extends Fragment implements MessageContract.View, OnShowKeyboardListener {
-
+    private static final int PICK_FROM_ALBUM = 10;
     public MessageFragment() {}
 
     private FragmentMessageBinding binding;
@@ -110,6 +123,39 @@ public class MessageFragment extends Fragment implements MessageContract.View, O
             }
         });
 
+        //확장메뉴 세팅
+        binding.addBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(binding.chatAdditionLayout.getVisibility() == View.VISIBLE){
+                    binding.addBtn.setImageDrawable(getContext().getResources().getDrawable(R.drawable.ic_add_black_24dp));
+                    binding.chatAdditionLayout.setVisibility(View.GONE);
+                } else {
+                    binding.addBtn.setImageDrawable(getContext().getResources().getDrawable(R.drawable.ic_cancel_black_24dp));
+                    binding.chatAdditionLayout.setVisibility(View.VISIBLE);
+                    InputMethodManager imm = (InputMethodManager) getContext().getSystemService(INPUT_METHOD_SERVICE);
+                    imm.hideSoftInputFromWindow(binding.submitText.getWindowToken(), InputMethodManager.RESULT_UNCHANGED_SHOWN);
+                }
+            }
+        });
+
+        binding.addPhoto.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                PermissionUtil.requestStoragePermissions(getContext(), new PermissionListener() {
+                    @Override
+                    public void onPermissionGranted() {
+                        startPickFromAlbumActivity();
+                    }
+
+                    @Override
+                    public void onPermissionDenied(List<String> deniedPermissions) {
+
+                    }
+                });
+            }
+        });
+
         //키보드 이벤트 제어
 //        binding.reclclerview.getRootView().getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
 //            @Override
@@ -161,6 +207,33 @@ public class MessageFragment extends Fragment implements MessageContract.View, O
     public void onPause() {
         presenter.onStop();
         super.onPause();
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if(resultCode == RESULT_OK){
+            if(requestCode == PICK_FROM_ALBUM){
+                List<Uri> uris = new ArrayList<>();
+                if(data.getData()!=null){
+                    uris.add(data.getData());
+                } else {
+                    if (data.getClipData() != null) {
+                        ClipData mClipData = data.getClipData();
+                        for (int i = 0; i < mClipData.getItemCount(); i++) {
+                            ClipData.Item item = mClipData.getItemAt(i);
+                            Uri uri = item.getUri();
+                            uris.add(uri);
+                        }
+                    }
+                }
+
+                presenter.onPhotoSelected(getContext(), uris);
+            }
+        } else {
+//            finish();
+        }
     }
 
     @Override
@@ -244,6 +317,21 @@ public class MessageFragment extends Fragment implements MessageContract.View, O
     @Override
     public void onHide() {
         RLog.i();
+    }
+
+    public void startPickFromAlbumActivity() {
+//        Intent intent = new Intent(Intent.ACTION_PICK);
+//        intent.setType(MediaStore.Images.Media.CONTENT_TYPE);
+//        startActivityForResult(intent, PICK_FROM_ALBUM);
+
+        Intent intent = new Intent();
+        intent.setType("image/*"); //allows any image file type. Change * to specific extension to limit it
+//                intent.setType(MediaStore.Images.Media.CONTENT_TYPE);
+        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+        intent.setAction(Intent.ACTION_GET_CONTENT);
+//                intent.setAction(Intent.ACTION_PICK);
+//                startActivityForResult(intent, PICK_FROM_ALBUM);
+        startActivityForResult(Intent.createChooser(intent, getString(R.string.select_photo)), PICK_FROM_ALBUM);
     }
 
 
