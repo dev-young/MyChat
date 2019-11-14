@@ -5,9 +5,11 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import android.net.Uri;
 import android.os.Build;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
@@ -22,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import project.kym.mychat.R;
+import project.kym.mychat.databinding.ItemMessageBinding;
 import project.kym.mychat.databinding.ItemMessageLeftBinding;
 import project.kym.mychat.databinding.ItemMessageRightBinding;
 import project.kym.mychat.model.ChatModel;
@@ -30,9 +33,10 @@ import project.kym.mychat.util.BindingUtil;
 import project.kym.mychat.util.RLog;
 
 public class MessageRecyclerViewAdapter extends RecyclerView.Adapter<MessageRecyclerViewAdapter.MessageViewHodler> implements MessageRecyclerViewAdapterContract.Model, MessageRecyclerViewAdapterContract.View{
-    private final int TYPE_MESSAGE_LEFT = 1;
-    private final int TYPE_MESSAGE_RIGHT = 2;
-    private final int TYPE_DATE = 10;
+    private final int TYPE_MESSAGE_LEFT = -1;
+    private final int TYPE_MESSAGE_RIGHT = -2;
+    private final int TYPE_MESSAGE = 1;
+    private final int TYPE_DATE = 0;
 
     List<ChatModel.Comment> comments = new ArrayList<>();
     Map<String, Integer> commentMap = new HashMap<>();    //리스트의 인덱스와 키값을 맵으로 저장 <Comment의 키값, 리스트에서 Comment의 인덱스>
@@ -51,19 +55,14 @@ public class MessageRecyclerViewAdapter extends RecyclerView.Adapter<MessageRecy
     public MessageViewHodler onCreateViewHolder(ViewGroup parent, int viewType) {
         MessageViewHodler hodler;
         switch (viewType){
-            case TYPE_MESSAGE_LEFT:
-                ItemMessageLeftBinding binding1 = DataBindingUtil.inflate(LayoutInflater.from(parent.getContext()), R.layout.item_message_left, parent, false);
-                hodler = new LeftTextMessageViewHolder(binding1);
-                break;
-
-            case TYPE_MESSAGE_RIGHT:
-                ItemMessageRightBinding binding2 = DataBindingUtil.inflate(LayoutInflater.from(parent.getContext()), R.layout.item_message_right, parent, false);
-                hodler = new RightTextMessageViewHolder(binding2);
+            case TYPE_DATE:
+                View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_date_divider,parent,false);
+                hodler = new DateMessageViewHolder(view);
                 break;
 
             default:
-                View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_date_divider,parent,false);
-                hodler = new DateMessageViewHolder(view);
+                ItemMessageBinding binding = DataBindingUtil.inflate(LayoutInflater.from(parent.getContext()), R.layout.item_message, parent, false);
+                hodler = new TextMessageViewHolder(binding);
         }
 
         return hodler;
@@ -115,18 +114,19 @@ public class MessageRecyclerViewAdapter extends RecyclerView.Adapter<MessageRecy
             time = "";
         }
 
-
-        switch (getItemViewType(position)){
-            case TYPE_MESSAGE_LEFT:
-                ((LeftTextMessageViewHolder)viewHolder).setData(userModel, comment, time, count);
-                break;
-
-            case TYPE_MESSAGE_RIGHT:
-                ((RightTextMessageViewHolder)viewHolder).setData(comment, time, count);
-                break;
-
-            default:
-        }
+        boolean self = isMyMessage(position);
+        viewHolder.setData(self, userModel, comment, time, count);
+//        switch (getItemViewType(position)){
+//            case TYPE_MESSAGE_LEFT:
+//                ((LeftTextMessageViewHolder)viewHolder).setData(userModel, comment, time, count);
+//                break;
+//
+//            case TYPE_MESSAGE_RIGHT:
+//                ((RightTextMessageViewHolder)viewHolder).setData(comment, time, count);
+//                break;
+//
+//            default:
+//        }
     }
 
     // TODO: 2019-03-29 뭔가 개선해야할 것 같다... 채팅방에 100명이 있다고 가정하면...
@@ -160,16 +160,17 @@ public class MessageRecyclerViewAdapter extends RecyclerView.Adapter<MessageRecy
 //        RLog.d("position: " + position);
         ChatModel.Comment comment = comments.get(position);
         String uid = comment.getUserUid();
-        UserModel userModel = users.get(uid);
 //        RLog.e(users.toString());
 //        RLog.e(uid);
         if(uid == null)
             return TYPE_DATE;
         else{
-            if(userModel.getUid().equals(myUid))
-                return TYPE_MESSAGE_RIGHT;
-            else
-                return TYPE_MESSAGE_LEFT;
+            return TYPE_MESSAGE;
+
+//            if(uid.equals(myUid))
+//                return TYPE_MESSAGE_RIGHT;
+//            else
+//                return TYPE_MESSAGE_LEFT;
         }
 
     }
@@ -182,6 +183,14 @@ public class MessageRecyclerViewAdapter extends RecyclerView.Adapter<MessageRecy
     private String getTime(long unixTime) {
         Date date = new Date(unixTime);
         return simpleDateFormat.format(date);
+    }
+
+    private boolean isMyMessage(int position){
+        ChatModel.Comment comment = comments.get(position);
+        String userUid = comment.getUserUid();
+        if(userUid != null && myUid.equals(userUid))
+            return true;
+        return false;
     }
 
     private String getTime(Date date) {
@@ -275,7 +284,8 @@ public class MessageRecyclerViewAdapter extends RecyclerView.Adapter<MessageRecy
         public MessageViewHodler(View view) {
             super(view);
         }
-
+        public void setData(boolean self, UserModel userModel, ChatModel.Comment comment, String time, int readUserCount){
+        }
     }
 
     /** 상대방이 보낸 메시지 뷰 홀더 */
@@ -374,6 +384,99 @@ public class MessageRecyclerViewAdapter extends RecyclerView.Adapter<MessageRecy
                 binding.readCounter.setText("");
             else
                 binding.readCounter.setText(String.valueOf(readUserCount));
+        }
+    }
+
+    static class TextMessageViewHolder extends MessageViewHodler {
+        ItemMessageBinding binding;
+
+        public TextMessageViewHolder(ItemMessageBinding binding) {
+            super(binding.getRoot());
+            this.binding = binding;
+        }
+
+        @Override
+        public void setData(boolean self, UserModel userModel, ChatModel.Comment comment, String time, int readUserCount) {
+            initLayout(self);
+
+            if(!self){
+                // 프로필 정보 표시
+                if(userModel == null){
+                    binding.profileImg.setVisibility(View.GONE);
+                    binding.name.setVisibility(View.GONE);
+                } else{
+                    binding.profileImg.setVisibility(View.VISIBLE);
+                    binding.name.setVisibility(View.VISIBLE);
+
+                    binding.name.setText(userModel.getUserName());
+                    BindingUtil.loadProfileImage(binding.profileImg, userModel.getProfileImageUrl());
+                }
+            }
+
+            // 메시지
+            if(comment.getType() == ChatModel.Comment.TYPE_TEXT){
+                binding.textMessage.setVisibility(View.VISIBLE);
+                binding.photo.setVisibility(View.GONE);
+                binding.textMessage.setText(comment.getMessage());
+            } else if(comment.getType() == ChatModel.Comment.TYPE_PHOTO){
+                binding.textMessage.setVisibility(View.GONE);
+                binding.photo.setVisibility(View.VISIBLE);
+                String filePath = comment.getLocalFilePath();
+                Object url = null;
+                if(filePath != null){
+                    File file = new File(filePath);
+                    if(file.exists())
+                        url = Uri.fromFile(file);
+                }
+
+                if(url == null)
+                    url = comment.getFileUrl();
+                Glide.with(binding.photo.getContext()).asBitmap().load(url).into(binding.photo);
+            }
+
+            // 메시지 보낸 시간 표시
+            if(time.isEmpty())
+                binding.time.setVisibility(View.GONE);
+            else {
+                binding.time.setText(time);
+                binding.time.setVisibility(View.VISIBLE);
+            }
+
+
+            // 안읽은 사람 수 표시
+            if(readUserCount == 0)
+                binding.readCounter.setText("");
+            else
+                binding.readCounter.setText(String.valueOf(readUserCount));
+        }
+
+        private void initLayout(boolean self) {
+            if(self){
+                RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) binding.dateLayout.getLayoutParams();
+                layoutParams.removeRule(RelativeLayout.END_OF);
+                binding.dateLayout.setLayoutParams(layoutParams);
+                layoutParams = (RelativeLayout.LayoutParams) binding.messageFrame.getLayoutParams();
+                layoutParams.removeRule(RelativeLayout.END_OF);
+                layoutParams.addRule(RelativeLayout.END_OF, binding.dateLayout.getId());
+                binding.messageFrame.setLayoutParams(layoutParams);
+                binding.rootLayout.setGravity(Gravity.END);
+                binding.dateLayout.setGravity(Gravity.END);
+                binding.textMessage.setBackgroundResource(R.drawable.chat_bubble_right);
+                binding.profileImg.setVisibility(View.GONE);
+                binding.name.setVisibility(View.GONE);
+
+            } else {
+                RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) binding.dateLayout.getLayoutParams();
+                layoutParams.removeRule(RelativeLayout.END_OF);
+                layoutParams.addRule(RelativeLayout.END_OF, binding.messageFrame.getId());
+                binding.dateLayout.setLayoutParams(layoutParams);
+                layoutParams = (RelativeLayout.LayoutParams) binding.messageFrame.getLayoutParams();
+                layoutParams.removeRule(RelativeLayout.END_OF);
+                binding.messageFrame.setLayoutParams(layoutParams);
+                binding.rootLayout.setGravity(Gravity.START);
+                binding.dateLayout.setGravity(Gravity.START);
+                binding.textMessage.setBackgroundResource(R.drawable.chat_bubble_left);
+            }
         }
     }
 
