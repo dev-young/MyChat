@@ -39,8 +39,6 @@ public class ChatRepository {
     private DatabaseReference databaseReference;
     private ValueEventListener valueEventListener;
 
-//    private final DocumentSnapshot.ServerTimestampBehavior behavior = DocumentSnapshot.ServerTimestampBehavior.ESTIMATE;    // 시간이 늦게 적용되는 문제를 해결해준다.
-
     private FirebaseFirestore firestore;
     private ListenerRegistration listenerRegistration;
     private final DocumentSnapshot.ServerTimestampBehavior behavior = DocumentSnapshot.ServerTimestampBehavior.ESTIMATE;    // 시간이 늦게 적용되는 문제를 해결해준다.

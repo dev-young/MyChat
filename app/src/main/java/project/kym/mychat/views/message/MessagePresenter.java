@@ -11,7 +11,6 @@ import androidx.annotation.Nullable;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.DataSource;
 import com.bumptech.glide.load.engine.GlideException;
-import com.bumptech.glide.request.FutureTarget;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.request.target.Target;
@@ -22,14 +21,12 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
-import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -39,10 +36,9 @@ import project.kym.mychat.model.ChatModel;
 import project.kym.mychat.model.UserModel;
 import project.kym.mychat.repository.MessageRepository;
 import project.kym.mychat.repository.MyAccount;
-import project.kym.mychat.util.BitmapUtil;
 import project.kym.mychat.util.ChatUtil;
 import project.kym.mychat.util.FileUtil;
-import project.kym.mychat.util.FirebaseListener;
+import project.kym.mychat.util.TaskListener;
 import project.kym.mychat.util.PushUtil;
 import project.kym.mychat.util.RLog;
 
@@ -169,7 +165,7 @@ public class MessagePresenter implements MessageContract{
                                 view.scrollToLastPosition(false);
                                 RLog.d("서버에 lastRead 업데이트 시작! ");
                                 resetUnreadMessageCounter();
-                                ChatUtil.updateLastRead(chatRoomUid, myUid, key, new FirebaseListener.Complete<Void>() {
+                                ChatUtil.updateLastRead(chatRoomUid, myUid, key, new TaskListener.Complete<Void>() {
                                     @Override
                                     public void onCompelete(boolean isSuccess, Void result) {}
                                 });
@@ -245,7 +241,7 @@ public class MessagePresenter implements MessageContract{
     public void sendMessage(String chatRoomUid, final ChatModel.Comment comment) {
         RLog.d("chatRoomUid = " + chatRoomUid);
         ChatModel chatModel = MessageRepository.getInstance().getCurrentChat();
-        ChatUtil.sendMessage(chatModel, comment, new FirebaseListener.UploadCompleteListener<ChatModel.Comment>() {
+        ChatUtil.sendMessage(chatModel, comment, new TaskListener.UploadCompleteListener<ChatModel.Comment>() {
             @Override
             public void onComplete(boolean isSuccess, ChatModel.Comment result) {
                 if(isSuccess){
@@ -280,7 +276,7 @@ public class MessagePresenter implements MessageContract{
                 public boolean onResourceReady(Bitmap resource, Object model, Target<Bitmap> target, DataSource dataSource, boolean isFirstResource) {
                     Map<String, Bitmap> fileDatas = new HashMap<>();
                     fileDatas.put(fileName, resource);
-                    ChatUtil.uploadPhotos(myUid, fileDatas, new FirebaseListener.UploadCompleteListener<Map<String, String>>() {
+                    ChatUtil.uploadPhotos(myUid, fileDatas, new TaskListener.UploadCompleteListener<Map<String, String>>() {
                         @Override
                         public void onComplete(boolean isSuccess, Map<String, String> result) {
                             if(isSuccess){

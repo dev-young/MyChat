@@ -85,7 +85,7 @@ public class ChatUtil {
 
     }
     /** 서버에 Comment 추가 및 lastRead 갱싱 */
-    public static void sendMessage(ChatModel chatModel, final ChatModel.Comment comment, final FirebaseListener.UploadCompleteListener<ChatModel.Comment> uploadCompleteListener) {
+    public static void sendMessage(ChatModel chatModel, final ChatModel.Comment comment, final TaskListener.UploadCompleteListener<ChatModel.Comment> uploadCompleteListener) {
 //        RLog.d("생성된 메시지: " +comment.toString());
         final FirebaseFirestore firestore = FirebaseFirestore.getInstance();
         final DocumentReference reference = firestore.collection("chatrooms").document(chatModel.getRoomUid());
@@ -134,7 +134,7 @@ public class ChatUtil {
 
     /** 사진 저장 작업 수행. */
     /**@param fileDatas <파일명, Bitmap> */
-    public static void uploadPhotos(String userUid, Map<String, Bitmap> fileDatas, @NonNull FirebaseListener.UploadCompleteListener< /* <FileName, Photo Url> */ Map<String, String>> listener){
+    public static void uploadPhotos(String userUid, Map<String, Bitmap> fileDatas, @NonNull TaskListener.UploadCompleteListener< /* <FileName, Photo Url> */ Map<String, String>> listener){
         Map<String, String> photoUrls = new HashMap<>();
         if(fileDatas.isEmpty()){
             listener.onComplete(true, photoUrls);
@@ -185,7 +185,7 @@ public class ChatUtil {
         }
     }
 
-    public static void updateLastRead(String chatRoomUid, String userUid, String readedUid, FirebaseListener.Complete<Void> listener){
+    public static void updateLastRead(String chatRoomUid, String userUid, String readedUid, TaskListener.Complete<Void> listener){
         FirebaseFirestore.getInstance().collection("chatrooms").document(chatRoomUid).update("lastRead." + userUid, readedUid).addOnCompleteListener(new OnCompleteListener<Void>() {
             @Override
             public void onComplete(@NonNull Task<Void> task) {

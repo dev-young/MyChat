@@ -15,7 +15,6 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -23,16 +22,17 @@ import java.util.List;
 import java.util.Map;
 
 import androidx.recyclerview.widget.SortedList;
-import project.kym.mychat.OnItemClickListner;
 import project.kym.mychat.R;
 import project.kym.mychat.model.ChatModel;
 import project.kym.mychat.model.UserModel;
+import project.kym.mychat.repository.UserRepository;
 import project.kym.mychat.util.BindingUtil;
 import project.kym.mychat.util.RLog;
+import project.kym.mychat.util.TaskListener;
 
 public class ChatRecyclerAdapter extends  RecyclerView.Adapter<ChatRecyclerAdapter.CustomViewHolder> implements ChatRecyclerAdapterContract.View, ChatRecyclerAdapterContract.Model{
-    Map<String, Integer> positionMap = new HashMap<>();    //리스트의 인덱스와 키값을 맵으로 저장 <ChatModel의 키값, 리스트에서 ChatModel의 인덱스>
     private SortedList<ChatModel> chatModels;
+    private Map<String, ChatModel> chatModelMap = new HashMap<>();
     private String myUid;
     private OnItemClickListner onItemClickListner;
 
@@ -56,14 +56,16 @@ public class ChatRecyclerAdapter extends  RecyclerView.Adapter<ChatRecyclerAdapt
 
             @Override
             public boolean areContentsTheSame(ChatModel oldItem, ChatModel newItem) {
-                RLog.i("oldItem: " + oldItem.getMessage() + " newItem: " + newItem.getMessage());
-                return oldItem.getTimestamp().equals(newItem.getTimestamp());
+//                return areItemsTheSame(oldItem, newItem);
+                boolean b = oldItem.getTimestamp().equals(newItem.getTimestamp());
+                RLog.i("oldItem: " + oldItem.getTimestamp() + " newItem: " + newItem.getTimestamp());
+                return b;
             }
 
             @Override
             public boolean areItemsTheSame(ChatModel item1, ChatModel item2) {
-                boolean b = item1.getTimestamp().equals(item2.getTimestamp());
-                RLog.i("oldItem: " + item1.getMessage() + " newItem: " + item2.getMessage() + " result: " +b);
+                boolean b = item1.getRoomUid().equals(item2.getRoomUid());
+                RLog.i("oldItem: " + item1.getRoomUid() + " newItem: " + item2.getRoomUid() + " result: " +b);
                 return b;
             }
 
@@ -113,26 +115,26 @@ public class ChatRecyclerAdapter extends  RecyclerView.Adapter<ChatRecyclerAdapt
 
         // 방 이름
         final boolean isGroup = chatModel.isGroup();
-        FirebaseFirestore.getInstance().collection("users").document(destinationUid).get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-            @Override
-            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                if(task.isSuccessful()){
-                    UserModel userModel =  task.getResult().toObject(UserModel.class);
-                    if(isGroup){
-                        // 그룹챗인 경우
-                        holder.imageView.setImageResource(R.drawable.group_24dp);
-                        holder.textView_title.setText(chatModel.getTitle());
-//                        holder.textView_title.setText(userModel.userName + "외 " + (chatModel.users.size()-1) + "명");
-                    } else {
-                        // 1:1 채팅인 경우
-                        holder.textView_title.setText(userModel.getUserName());
-                        BindingUtil.loadProfileImage(holder.imageView, userModel.getProfileImageUrl());
+        if(isGroup && chatModel.getTitle() != null && !chatModel.getTitle().isEmpty()){
+            // 채팅방 이름이 있는 그룹챗인 경우
+            holder.imageView.setImageResource(R.drawable.group_24dp);
+            holder.textView_title.setText(chatModel.getTitle());
+        } else{
+            UserRepository.getInstance().loadUserModel(destinationUid, new TaskListener.LoadCompleteListener<UserModel>() {
+                @Override
+                public void onComplete(boolean isSuccess, UserModel userModel) {
+                    if(isSuccess){
+                        if(isGroup){
+                            holder.textView_title.setText(userModel.getUserName()+ "외 " + (chatModel.getUsers().size()-1) + "명");
+                        } else {
+                            // 1:1 채팅인 경우
+                            holder.textView_title.setText(userModel.getUserName());
+                            BindingUtil.loadProfileImage(holder.imageView, userModel.getProfileImageUrl());
+                        }
                     }
-                } else {
-                    RLog.e(task.getException().getMessage());
                 }
-            }
-        });
+            });
+        }
 
 
 
@@ -156,7 +158,7 @@ public class ChatRecyclerAdapter extends  RecyclerView.Adapter<ChatRecyclerAdapt
             @Override
             public void onClick(View view) {
                 if(onItemClickListner != null){
-                    onItemClickListner.onItemClick(position);
+                    onItemClickListner.onChatRoomClick(position, holder.textView_title.getText().toString());
                 }
             }
         });
@@ -242,11 +244,18 @@ public class ChatRecyclerAdapter extends  RecyclerView.Adapter<ChatRecyclerAdapt
 
     @Override
     public void addItem(String key, ChatModel chatModel) {
-//        chatModels.add(chatModel);
-//        positionMap.put(key, chatModels.size()-1);
-        int addedInedx = chatModels.add(chatModel);
-        positionMap.put(key, addedInedx);
-        RLog.i("addedInedx = " + addedInedx);
+        if(chatModelMap.get(key) != null){
+            int targetPosition = 0;
+            for (int i = 0; i < chatModels.size(); i++) {
+                if(chatModels.get(i).getRoomUid().equals(chatModel.getRoomUid())){
+                    targetPosition = i;
+                    break;
+                }
+            }
+            chatModels.updateItemAt(targetPosition, chatModel);
+        } else
+            chatModels.add(chatModel);
+        chatModelMap.put(key, chatModel);
     }
 
     @Override
@@ -258,9 +267,7 @@ public class ChatRecyclerAdapter extends  RecyclerView.Adapter<ChatRecyclerAdapt
                 break;
             }
         }
-//        chatModels.add(0, chatModel);
         chatModels.updateItemAt(targetPosition, chatModel);
-//        chatModels.set(targetPosition, chatModel);
     }
 
     @Override
@@ -285,5 +292,9 @@ public class ChatRecyclerAdapter extends  RecyclerView.Adapter<ChatRecyclerAdapt
             textView_timestamp = (TextView)view.findViewById(R.id.chatitem_textview_timestamp);
             textView_new_msgcnt = view.findViewById(R.id.chatitem_textview_NewMsgCount);
         }
+    }
+
+    public interface OnItemClickListner {
+        void onChatRoomClick(int position, String title);
     }
 }

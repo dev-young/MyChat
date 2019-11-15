@@ -20,20 +20,24 @@ import java.util.Map;
 
 import project.kym.mychat.model.UserModel;
 import project.kym.mychat.util.RLog;
+import project.kym.mychat.util.RxUtil;
+import project.kym.mychat.util.TaskListener;
+import project.kym.mychat.util.UserUtil;
 
-public class PeopleRepository {
-    private static PeopleRepository instance;
+public class UserRepository {
+    private static UserRepository instance;
 
-    private PeopleRepository() {
+    private UserRepository() {
     }
 
-    public static PeopleRepository getInstance() {
+    public static UserRepository getInstance() {
         if(instance == null)
-            instance = new PeopleRepository();
+            instance = new UserRepository();
         return instance;
     }
 
-    private Map<String, UserModel> userModelMap = new HashMap<>();
+    Map<String, UserModel> userModelMap = new HashMap<>();
+    Map<String, Boolean> userLoadingMap = new HashMap<>(); //<uid, 로딩중인지 여부> 해당 유저의 uid가 서버에 요청중인지 확인.
 
     public void getPeopleList(final OnUserModelListListener onUserModelListListener){
         getPeopleListFromFireStore(onUserModelListListener);
@@ -46,6 +50,62 @@ public class PeopleRepository {
         }
 
         return userModels;
+    }
+
+    public void loadUserModel(String userUid, TaskListener.LoadCompleteListener<UserModel> listener){
+
+        UserModel targetModel = userModelMap.get(userUid);
+        if(targetModel == null){
+            Boolean isLoading = userLoadingMap.get(userUid);
+            isLoading = isLoading != null? isLoading : false;
+            if(isLoading){
+                RxUtil.simpleTask(isLoading, new RxUtil.SimpleTask<Boolean>() {
+                    @Override
+                    public Boolean backTask() {
+                        int tryCount;
+                        for (tryCount = 0; tryCount < 50; tryCount++) {
+                            Boolean isLoading = userLoadingMap.get(userUid);
+                            if(isLoading != null && isLoading){
+                                RLog.i("유저 불러오기 대기(로컬) " + userUid);
+                                try {
+                                    Thread.sleep(180);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            } else break;
+                        }
+                        if (userModelMap.get(userUid) != null)
+                            return true;
+                        else
+                            return false;
+                    }
+
+                    @Override
+                    public void uiTask(Boolean result) {
+                        UserModel userModel = userModelMap.get(userUid);
+                        listener.onComplete(result, userModel);
+                        if(userModel != null)
+                            RLog.i("유저 불러오기 완료(로컬): " + userModel.getUserName());
+                    }
+                });
+            } else {
+                userLoadingMap.put(userUid, true);
+                UserUtil.loadUserInfo(userUid, new TaskListener.LoadCompleteListener<UserModel>() {
+                    @Override
+                    public void onComplete(boolean isSuccess, UserModel resutl) {
+                        if (isSuccess) {
+                            RLog.i("유저 불러오기 완료: " + resutl.getUserName());
+                            userModelMap.put(resutl.getUid(), resutl);
+                            userLoadingMap.remove(userUid);
+                        }
+                        listener.onComplete(isSuccess, resutl);
+                    }
+                });
+            }
+
+        } else {
+            listener.onComplete(true, targetModel);
+        }
     }
 
     private void getPeopleListFromFireStore(final OnUserModelListListener onUserModelListListener){

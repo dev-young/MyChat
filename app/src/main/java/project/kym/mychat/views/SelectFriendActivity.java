@@ -1,6 +1,5 @@
 package project.kym.mychat.views;
 
-import android.content.Intent;
 import android.os.Bundle;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -22,7 +21,7 @@ import project.kym.mychat.R;
 import project.kym.mychat.model.ChatModel;
 import project.kym.mychat.model.UserModel;
 import project.kym.mychat.util.BindingUtil;
-import project.kym.mychat.repository.PeopleRepository;
+import project.kym.mychat.repository.UserRepository;
 import project.kym.mychat.views.message.MessageActivity;
 
 public class SelectFriendActivity extends BaseActivity {
@@ -60,7 +59,7 @@ public class SelectFriendActivity extends BaseActivity {
 
         public SelectFriendRecyclerViewAdapter() {
             userModels = new ArrayList<>();
-            PeopleRepository.getInstance().getPeopleList(new PeopleRepository.OnUserModelListListener() {
+            UserRepository.getInstance().getPeopleList(new UserRepository.OnUserModelListListener() {
                 @Override
                 public void onSuccess(List<UserModel> models) {
                     userModels.clear();

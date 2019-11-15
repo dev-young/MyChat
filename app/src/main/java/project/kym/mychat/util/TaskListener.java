@@ -1,6 +1,6 @@
 package project.kym.mychat.util;
 
-public interface FirebaseListener {
+public interface TaskListener {
 
     interface Complete<T>{
         void onCompelete(boolean isSuccess, T result);

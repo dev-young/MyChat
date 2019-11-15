@@ -3,14 +3,13 @@ package project.kym.mychat.views.main.chat.adapter;
 import java.util.List;
 
 import androidx.recyclerview.widget.SortedList;
-import project.kym.mychat.OnItemClickListner;
 import project.kym.mychat.model.ChatModel;
 
 public interface ChatRecyclerAdapterContract {
 
     interface View {
 
-        void setOnItemClickListner(OnItemClickListner onItemClickListner);
+        void setOnItemClickListner(ChatRecyclerAdapter.OnItemClickListner onItemClickListner);
 
         void notifyAdapter();
     }

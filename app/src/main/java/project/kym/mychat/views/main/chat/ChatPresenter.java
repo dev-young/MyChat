@@ -9,7 +9,7 @@ import project.kym.mychat.util.RLog;
 import project.kym.mychat.views.main.chat.adapter.ChatRecyclerAdapter;
 import project.kym.mychat.views.main.chat.adapter.ChatRecyclerAdapterContract;
 
-public class ChatPresenter implements ChatContract, OnItemClickListner {
+public class ChatPresenter implements ChatContract {
     View view;
     ChatRecyclerAdapterContract.Model adapterModel;
     ChatRecyclerAdapterContract.View adapterView;
@@ -21,7 +21,13 @@ public class ChatPresenter implements ChatContract, OnItemClickListner {
     public void setAdapter(ChatRecyclerAdapter adapter) {
         this.adapterModel = adapter;
         this.adapterView = adapter;
-        adapterView.setOnItemClickListner(this);
+        adapterView.setOnItemClickListner(new ChatRecyclerAdapter.OnItemClickListner() {
+            @Override
+            public void onChatRoomClick(int position, String title) {
+                ChatModel chatModel = adapterModel.getItem(position);
+                view.startMessageActivity(chatModel.getRoomUid(), title, chatModel.isGroup());
+            }
+        });
     }
 
     @Override
@@ -38,13 +44,13 @@ public class ChatPresenter implements ChatContract, OnItemClickListner {
     @Override
     public void onResume() {
         RLog.i();
-        adapterModel.clearItem();
+//        adapterModel.clearItem();
         String myUid = FirebaseAuth.getInstance().getUid();
         ChatRepository.getInstance().startListen(myUid, new ChatRepository.OnEventListener() {
             @Override
             public void onAdded(String key, ChatModel chatModel) {
                 adapterModel.addItem(key, chatModel);
-                adapterView.notifyAdapter();
+//                adapterView.notifyAdapter();
 
                 if(adapterModel.getItems().size() < 1){
                     view.showNoChatMessage(true);
@@ -56,7 +62,7 @@ public class ChatPresenter implements ChatContract, OnItemClickListner {
             @Override
             public void onChanged(String key, ChatModel chatModel) {
                 adapterModel.updateItem(key, chatModel);
-                adapterView.notifyAdapter();
+//                adapterView.notifyAdapter();
             }
         });
     }
@@ -66,11 +72,5 @@ public class ChatPresenter implements ChatContract, OnItemClickListner {
         ChatRepository.getInstance().stopListen();
 //        ChatRepository.getInstance().removeListener();
         RLog.i("valueEventListener removed!");
-    }
-
-    @Override
-    public void onItemClick(int position) {
-        ChatModel chatModel = adapterModel.getItem(position);
-        view.startMessageActivity(chatModel.getRoomUid(), chatModel.getTitle(), chatModel.isGroup());
     }
 }

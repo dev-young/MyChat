@@ -7,7 +7,7 @@ import android.view.View;
 import java.util.List;
 
 import project.kym.mychat.model.UserModel;
-import project.kym.mychat.repository.PeopleRepository;
+import project.kym.mychat.repository.UserRepository;
 
 public class PeopleListViewModel {
     public ObservableArrayList<UserModel> userModels = new ObservableArrayList<>();
@@ -21,7 +21,7 @@ public class PeopleListViewModel {
 
     public void loadPeopleList(){
         progressBarVisibility.set(View.VISIBLE);
-        PeopleRepository.getInstance().getPeopleList(new PeopleRepository.OnUserModelListListener() {
+        UserRepository.getInstance().getPeopleList(new UserRepository.OnUserModelListListener() {
             @Override
             public void onSuccess(List<UserModel> models) {
                 userModels.clear();
