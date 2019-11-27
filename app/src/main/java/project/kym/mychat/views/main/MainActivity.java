@@ -46,13 +46,13 @@ public class MainActivity extends BaseActivity {
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
                 switch (item.getItemId()){
                     case R.id.action_people:
-                        getFragmentManager().beginTransaction().replace(R.id.mainactivity_framelayout,peopleFragment).commit();
+                        getSupportFragmentManager().beginTransaction().replace(R.id.mainactivity_framelayout,peopleFragment).commit();
                         return true;
                     case R.id.action_chat:
-                        getFragmentManager().beginTransaction().replace(R.id.mainactivity_framelayout,chatFragment).commit();
+                        getSupportFragmentManager().beginTransaction().replace(R.id.mainactivity_framelayout,chatFragment).commit();
                         return true;
                     case R.id.action_account:
-                        getFragmentManager().beginTransaction().replace(R.id.mainactivity_framelayout,accountFragment).commit();
+                        getSupportFragmentManager().beginTransaction().replace(R.id.mainactivity_framelayout,accountFragment).commit();
                         return true;
                 }
 
@@ -61,7 +61,7 @@ public class MainActivity extends BaseActivity {
         });
         updatePushTokenToServer();
 
-        getFragmentManager().beginTransaction().replace(R.id.mainactivity_framelayout,chatFragment).commit();
+        getSupportFragmentManager().beginTransaction().replace(R.id.mainactivity_framelayout,chatFragment).commit();
     }
 
 

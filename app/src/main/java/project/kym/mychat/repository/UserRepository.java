@@ -43,12 +43,8 @@ public class UserRepository {
         getPeopleListFromFireStore(onUserModelListListener);
     }
 
-    private List<UserModel> getList(){
-        List<UserModel> userModels = new ArrayList<>();
-        for(UserModel model : userModelMap.values()){
-            userModels.add(model);
-        }
-
+    public List<UserModel> getList(){
+        List<UserModel> userModels = new ArrayList<>(userModelMap.values());
         return userModels;
     }
 
@@ -114,32 +110,28 @@ public class UserRepository {
             public void onComplete(boolean isSuccess, UserModel userModel) {
                 if (isSuccess) {
                     final String myUid = userModel.getUid();
-                    if(userModelMap.isEmpty()){
-                        FirebaseFirestore.getInstance().collection("users").get()
-                                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                                    @Override
-                                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                                        for(QueryDocumentSnapshot snapshot : queryDocumentSnapshots){
-                                            UserModel userModel = snapshot.toObject(UserModel.class);
-                                            if(userModel.getUid() != null && userModel.getUid().equals(myUid)){
-                                                continue;
-                                            }
-                                            userModelMap.put(snapshot.getId(), userModel);
+                    FirebaseFirestore.getInstance().collection("users").get()
+                            .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                                @Override
+                                public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                                    for(QueryDocumentSnapshot snapshot : queryDocumentSnapshots){
+                                        UserModel userModel = snapshot.toObject(UserModel.class);
+                                        if(userModel.getUid() != null && userModel.getUid().equals(myUid)){
+                                            continue;
                                         }
-                                        onUserModelListListener.onSuccess(getList());
+                                        userModelMap.put(snapshot.getId(), userModel);
                                     }
+                                    onUserModelListListener.onSuccess(getList());
+                                }
 
-                                })
-                                .addOnFailureListener(new OnFailureListener() {
-                                    @Override
-                                    public void onFailure(@NonNull Exception e) {
-                                        RLog.e(e.getMessage());
-                                        onUserModelListListener.onError(e.getMessage());
-                                    }
-                                });
-                    } else {
-                        onUserModelListListener.onSuccess(getList());
-                    }
+                            })
+                            .addOnFailureListener(new OnFailureListener() {
+                                @Override
+                                public void onFailure(@NonNull Exception e) {
+                                    RLog.e(e.getMessage());
+                                    onUserModelListListener.onError(e.getMessage());
+                                }
+                            });
                 } else {
                     onUserModelListListener.onError("");
                 }

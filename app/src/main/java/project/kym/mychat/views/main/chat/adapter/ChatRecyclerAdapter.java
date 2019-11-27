@@ -232,7 +232,7 @@ public class ChatRecyclerAdapter extends  RecyclerView.Adapter<ChatRecyclerAdapt
             chatModels.clear();
 
         for(ChatModel chatModel : models){
-            chatModels.add(chatModel);
+            addItem(chatModel.getRoomUid(), chatModel);
         }
         chatModels.endBatchedUpdates();
     }

@@ -2,6 +2,8 @@ package project.kym.mychat.views.main.account;
 
 import androidx.annotation.NonNull;
 import androidx.databinding.ObservableField;
+import androidx.lifecycle.ViewModel;
+
 import android.view.View;
 
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -18,7 +20,7 @@ import project.kym.mychat.model.UserModel;
 import project.kym.mychat.repository.MyAccount;
 import project.kym.mychat.util.RLog;
 
-public class UserModelViewModel {
+public class UserModelViewModel extends ViewModel {
     AccountViewContract view;
 
     public ObservableField<String> userName = new ObservableField<>();
@@ -27,7 +29,7 @@ public class UserModelViewModel {
 
     public String uid;
 
-    public UserModelViewModel(AccountViewContract view) {
+    public void setView(AccountViewContract view) {
         this.view = view;
     }
 
